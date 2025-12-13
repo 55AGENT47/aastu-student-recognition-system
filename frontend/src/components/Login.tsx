@@ -1,0 +1,146 @@
+import { useState } from 'react';
+import { useAuth } from '../context/AuthContext';
+import { Eye, EyeOff, UserCheck, ChefHat, Shield } from 'lucide-react';
+import AastuLogo from './AastuLogo';
+
+export default function Login() {
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [role, setRole] = useState<'admin' | 'cafeteria' | 'main_gate'>('admin');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const { login } = useAuth();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
+    try {
+      await login(username, password, role);
+    } catch (error) {
+      if (error instanceof Error) {
+        setError(error.message || 'Invalid credentials');
+      } else {
+        setError('Invalid credentials');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const roleOptions = [
+    { value: 'admin' as const, label: 'Administrator', icon: UserCheck },
+    { value: 'cafeteria' as const, label: 'Cafeteria Security', icon: ChefHat },
+    { value: 'main_gate' as const, label: 'Main Security', icon: Shield },
+  ];
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 px-4">
+      <div className="max-w-md w-full space-y-8">
+        <div className="text-center">
+          <div className="flex justify-center mb-4">
+            <AastuLogo size="lg" />
+          </div>
+          <h2 className="text-3xl font-bold text-gray-900">Student Recognition System</h2>
+          <p className="mt-2 text-gray-600">Admin & Security Login</p>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-lg p-8">
+          <form onSubmit={handleSubmit} className="space-y-6">
+          
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-3">
+                Select Role
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                {roleOptions.map((option) => {
+                  const Icon = option.icon;
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => setRole(option.value)}
+                      className={`flex flex-col items-center justify-center px-3 py-3 border-2 rounded-md transition-all ${
+                        role === option.value
+                          ? 'border-blue-500 bg-blue-50'
+                          : 'border-gray-300 bg-white hover:border-gray-400'
+                      }`}
+                    >
+                      <Icon className={`h-5 w-5 mb-1 ${role === option.value ? 'text-blue-600' : 'text-gray-400'}`} />
+                      <span className={`text-xs font-bold ${role === option.value ? 'text-blue-700' : 'text-gray-700'}`}>
+                        {option.label}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+       
+            <div>
+              <label htmlFor="username" className="block text-sm font-medium text-gray-700">
+                Username
+              </label>
+              <input
+                id="username"
+                type="text"
+                required
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                placeholder="Enter your username"
+              />
+            </div>
+
+           
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                Password
+              </label>
+              <div className="mt-1 relative">
+                <input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="block w-full px-3 py-2 pr-10 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Enter your password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-5 w-5 text-gray-400" />
+                  ) : (
+                    <Eye className="h-5 w-5 text-gray-400" />
+                  )}
+                </button>
+              </div>
+            </div>
+
+           
+            {error && (
+              <div className="text-red-600 text-sm text-center">
+                {error}
+              </div>
+            )}
+
+         
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? 'Signing in...' : 'Sign in'}
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+}

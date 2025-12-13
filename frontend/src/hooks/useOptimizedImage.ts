@@ -1,0 +1,1 @@
+export { useOptimizedImage, OptimizedStudentImage } from './useOptimizedImage.tsx';
