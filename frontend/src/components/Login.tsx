@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Eye, EyeOff, UserCheck, ChefHat, Shield } from 'lucide-react';
+import { Eye, EyeOff, UserCheck, ChefHat, Shield, Home } from 'lucide-react';
 import AastuLogo from './AastuLogo';
 
 export default function Login() {
@@ -37,22 +37,26 @@ export default function Login() {
   ];
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 px-4">
+      <a href="/" className="absolute top-4 left-4 flex items-center space-x-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+        <Home className="w-5 h-5" />
+        <span className="font-medium">Home</span>
+      </a>
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
           <div className="flex justify-center mb-4">
             <AastuLogo size="lg" />
           </div>
-          <h2 className="text-3xl font-bold text-gray-900">Student Recognition System</h2>
-          <p className="mt-2 text-gray-600">Admin & Security Login</p>
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Student Recognition System</h2>
+          <p className="mt-2 text-gray-600 dark:text-gray-400">Admin & Security Login</p>
         </div>
 
-        <div className="bg-white rounded-xl shadow-lg p-8">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8">
           <form onSubmit={handleSubmit} className="space-y-6">
           
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-3">
-                Select Role
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3 text-center">
+                 Select Role
               </label>
               <div className="grid grid-cols-2 gap-2">
                 {roleOptions.map((option) => {
@@ -64,12 +68,12 @@ export default function Login() {
                       onClick={() => setRole(option.value)}
                       className={`flex flex-col items-center justify-center px-3 py-3 border-2 rounded-md transition-all ${
                         role === option.value
-                          ? 'border-blue-500 bg-blue-50'
-                          : 'border-gray-300 bg-white hover:border-gray-400'
+                          ? 'border-blue-500 bg-blue-50 dark:bg-blue-900'
+                          : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-500'
                       }`}
                     >
                       <Icon className={`h-5 w-5 mb-1 ${role === option.value ? 'text-blue-600' : 'text-gray-400'}`} />
-                      <span className={`text-xs font-bold ${role === option.value ? 'text-blue-700' : 'text-gray-700'}`}>
+                      <span className={`text-xs font-bold ${role === option.value ? 'text-blue-700 dark:text-blue-300' : 'text-gray-700 dark:text-gray-300'}`}>
                         {option.label}
                       </span>
                     </button>
@@ -80,7 +84,7 @@ export default function Login() {
 
        
             <div>
-              <label htmlFor="username" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="username" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 Username
               </label>
               <input
@@ -89,14 +93,14 @@ export default function Login() {
                 required
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 placeholder="Enter your username"
               />
             </div>
 
            
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 Password
               </label>
               <div className="mt-1 relative">
@@ -106,7 +110,7 @@ export default function Login() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="block w-full px-3 py-2 pr-10 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  className="block w-full px-3 py-2 pr-10 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                   placeholder="Enter your password"
                 />
                 <button

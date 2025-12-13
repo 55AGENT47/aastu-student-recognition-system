@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, Sun, Moon } from 'lucide-react';
 import logo from '../assets/images/download-removebg-preview.png';
+import { useTheme } from '../context/ThemeContext';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { theme, toggleTheme } = useTheme();
 
   const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
     if (href.startsWith('#')) {
@@ -47,6 +49,9 @@ const Header = () => {
           </nav>
 
           <div className="hidden md:flex items-center space-x-4">
+            <button onClick={toggleTheme} className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
+              {theme === 'light' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
+            </button>
             <a href="/login" className="text-gray-700 hover:text-blue-600 font-medium transition-colors">
               Login
             </a>
@@ -80,6 +85,10 @@ const Header = () => {
                 Contact
               </a>
               <div className="flex flex-col space-y-2 pt-4 border-t border-gray-200">
+                <button onClick={toggleTheme} className="flex items-center space-x-2 text-gray-700 hover:text-blue-600 font-medium transition-colors">
+                  {theme === 'light' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
+                  <span>{theme === 'light' ? 'Dark Mode' : 'Light Mode'}</span>
+                </button>
                 <a href="/login" className="text-left text-gray-700 hover:text-blue-600 font-medium transition-colors">
                   Login
                 </a>

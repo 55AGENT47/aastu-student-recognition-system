@@ -7,6 +7,7 @@ import StudentPortal from './components/StudentPortal';
 import Home from './pages/Home';
 import NotFound from './pages/NotFound';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
 
 const AppContent: React.FC = () => {
   const { isAuthenticated, user } = useAuth();
@@ -67,9 +68,11 @@ const App: React.FC = () => {
   }, []);
 
   return (
-    <AuthProvider>
-      <AppContent />
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
+    </ThemeProvider>
   );
 };
 
