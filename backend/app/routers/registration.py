@@ -160,9 +160,9 @@ def get_departments():
         "Civil Engineering",
         "Chemical Engineering",
         "Electrical & Computer Engineering",
+        "Mechanical Engineering",
         "Electromechanical Engineering",
         "Environmental Engineering",
-        "Mechanical Engineering",
         "Mining Engineering",
         "Software Engineering",
         "Biotechnology",
@@ -171,9 +171,7 @@ def get_departments():
         "Food Science & Applied Nutrition",
         "Mathematics",
         "Physics",
-        "Statistics",
-        "Social Science",
-        "Business & Management",
-        "Humanities Division"
+        "Industrial Management",
+        "Engineering Management",
     ]
     return {"departments": departments}

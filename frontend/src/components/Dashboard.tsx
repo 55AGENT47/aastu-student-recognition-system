@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { LayoutDashboard, Users, Clock, MapPin, LogOut, UtensilsCrossed } from 'lucide-react';
+import { LayoutDashboard, Users, Clock, MapPin, LogOut, UtensilsCrossed, UserCog } from 'lucide-react';
 import CafeAccessAdmin from './CafeAccessAdmin';
 import { useAuth } from '../context/AuthContext';
 import Overview from './Overview';
@@ -7,10 +7,11 @@ import StudentManagement from './StudentManagement';
 import MainLogs from './MainLogs';
 import CafeteriaLogs from './CafeteriaLogs';
 import AccessPoints from './AccessPoints';
+import ManageUsers from './ManageUsers';
 
 import AastuLogo from './AastuLogo';
 
-type Tab = 'overview' | 'students' | 'logs' | 'cafeteria-logs' | 'access-points' | 'cafe-access';
+type Tab = 'overview' | 'students' | 'logs' | 'cafeteria-logs' | 'access-points' | 'cafe-access' | 'manage-users';
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState<Tab>('overview');
@@ -23,6 +24,7 @@ export default function Dashboard() {
     { id: 'cafeteria-logs' as Tab, name: 'Cafeteria Logs', icon: UtensilsCrossed },
     { id: 'access-points' as Tab, name: 'Access Points', icon: MapPin },
     { id: 'cafe-access' as Tab, name: 'Cafeteria Access', icon: UtensilsCrossed },
+    { id: 'manage-users' as Tab, name: 'Manage Users', icon: UserCog },
   ];
 
   const renderContent = () => {
@@ -39,6 +41,8 @@ export default function Dashboard() {
         return <AccessPoints />;
       case 'cafe-access':
         return <CafeAccessAdmin />;
+      case 'manage-users':
+        return <ManageUsers />;
       default:
         return <Overview />;
     }
