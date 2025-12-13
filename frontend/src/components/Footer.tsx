@@ -39,12 +39,12 @@ export default function Footer() {
                 </a>
               </li>
               <li>
-                <a href="#about" className="text-gray-400 hover:text-white transition-colors">
+                <a href="https://www.aastu.edu.et/about-us/" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors">
                   About
                 </a>
               </li>
               <li>
-                <a href="#contact" className="text-gray-400 hover:text-white transition-colors">
+                <a href="https://www.aastu.edu.et/contact/" target="_blank" rel="noopener noreferrer"  className="text-gray-400 hover:text-white transition-colors">
                   Contact
                 </a>
               </li>
@@ -55,22 +55,22 @@ export default function Footer() {
             <h4 className="text-lg font-semibold mb-6">Support</h4>
             <ul className="space-y-3">
               <li>
-                <a href="#" className="text-gray-400 hover:text-white transition-colors">
+                <a href="https://www.aastu.edu.et/contact/" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors">
                   Documentation
                 </a>
               </li>
               <li>
-                <a href="#" className="text-gray-400 hover:text-white transition-colors">
+                 <a href="https://www.aastu.edu.et/contact/" target="_blank" rel="noopener noreferrer"  className="text-gray-400 hover:text-white transition-colors">
                   Help Center
                 </a>
               </li>
               <li>
-                <a href="#" className="text-gray-400 hover:text-white transition-colors">
+                <a href="https://www.aastu.edu.et/contact/" target="_blank" rel="noopener noreferrer"  className="text-gray-400 hover:text-white transition-colors">
                   Privacy Policy
                 </a>
               </li>
               <li>
-                <a href="#" className="text-gray-400 hover:text-white transition-colors">
+                 <a href="https://www.aastu.edu.et/contact/" target="_blank" rel="noopener noreferrer"  className="text-gray-400 hover:text-white transition-colors">
                   Terms of Service
                 </a>
               </li>
@@ -86,11 +86,11 @@ export default function Footer() {
               </div>
               <div className="flex items-center space-x-3">
                 <Phone className="w-5 h-5 text-gray-400 flex-shrink-0" />
-                <span className="text-gray-400 text-sm">+251 11 416 6000</span>
+                <span className="text-gray-400 text-sm">Tel: +251 11 888 0610</span>
               </div>
               <div className="flex items-center space-x-3">
                 <Mail className="w-5 h-5 text-gray-400 flex-shrink-0" />
-                <span className="text-gray-400 text-sm">support@aastu.edu.et</span>
+                <span className="text-gray-400 text-sm"> pir@aastu.edu.et</span>
               </div>
             </div>
           </div>
