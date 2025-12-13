@@ -68,19 +68,19 @@ const About = () => {
             />
             <div className="absolute inset-0 bg-blue-600 opacity-10 rounded-2xl"></div>
             
-            <div className="absolute bottom-6 left-6 right-6 bg-white rounded-xl p-6 shadow-lg border border-gray-200">
+            <div className="absolute bottom-6 left-6 right-6 bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg border border-gray-200 dark:border-gray-700">
               <div className="grid grid-cols-3 gap-4 text-center">
                 <div>
-                  <div className="text-2xl font-bold text-blue-600">15K+</div>
-                  <div className="text-sm text-gray-500">Students</div>
+                  <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">15K+</div>
+                  <div className="text-sm text-gray-500 dark:text-gray-400">Students</div>
                 </div>
                 <div>
-                  <div className="text-2xl font-bold text-blue-600">500+</div>
-                  <div className="text-sm text-gray-500">Faculty</div>
+                  <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">500+</div>
+                  <div className="text-sm text-gray-500 dark:text-gray-400">Faculty</div>
                 </div>
                 <div>
-                  <div className="text-2xl font-bold text-blue-600">50+</div>
-                  <div className="text-sm text-gray-500">Programs</div>
+                  <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">50+</div>
+                  <div className="text-sm text-gray-500 dark:text-gray-400">Programs</div>
                 </div>
               </div>
             </div>

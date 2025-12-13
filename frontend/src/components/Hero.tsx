@@ -58,7 +58,7 @@ const Hero = () => {
           </div>
           
           <div className="relative">
-            <div className="bg-white rounded-2xl shadow-2xl p-8 border border-gray-200">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8 border border-gray-200 dark:border-gray-700">
               <img
                 src="/src/assets/images/graduated_3135755.png"
                 alt="Student using facial recognition system"
@@ -67,8 +67,8 @@ const Hero = () => {
               />
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="font-semibold text-gray-900">AASTU STUDENT</h3>
-                  <p className="text-gray-500">Student ID: AASTU2024001</p>
+                  <h3 className="font-semibold text-gray-900 dark:text-white">AASTU STUDENT</h3>
+                  <p className="text-gray-500 dark:text-gray-400">Student ID: AASTU2024001</p>
                 </div>
                 <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
                   <Shield className="w-6 h-6 text-green-600" />

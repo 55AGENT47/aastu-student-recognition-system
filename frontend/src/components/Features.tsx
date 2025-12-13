@@ -49,14 +49,14 @@ const Features = () => {
         
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
           {features.map((feature, index) => (
-            <div key={index} className="bg-white/80 backdrop-blur-sm rounded-xl p-8 hover:shadow-lg transition-shadow border border-white/50">
+            <div key={index} className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-xl p-8 hover:shadow-lg transition-shadow border border-white/50 dark:border-gray-700">
               <div className="w-12 h-12 bg-blue-500 rounded-lg flex items-center justify-center mb-6">
                 <feature.icon className="w-6 h-6 text-white" />
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-4">
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
                 {feature.title}
               </h3>
-              <p className="text-gray-600 leading-relaxed">
+              <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
                 {feature.description}
               </p>
             </div>
