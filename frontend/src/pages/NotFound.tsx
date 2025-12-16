@@ -2,7 +2,7 @@ import React from 'react';
 
 const NotFound: React.FC = () => {
   return (
-    <section className="relative flex py-10 min-h-screen items-center justify-center overflow-hidden bg-black">
+    <section className="relative flex py-10 min-h-screen items-center justify-center overflow-hidden bg-black dark:bg-gray-950">
       <div className="mx-auto relative z-30 w-full max-w-[600px] text-center px-4">
         {/* Large 404 Text */}
         <div className="mb-8">
@@ -110,15 +110,15 @@ const NotFound: React.FC = () => {
           </svg>
         </div>
 
-        <h1 className="mb-4 text-3xl font-bold text-white sm:text-4xl">
+        <h1 className="mb-4 text-3xl font-bold text-white dark:text-gray-100 sm:text-4xl">
           OPPS! Page Not Found
         </h1>
-        <p className="mb-8 text-base text-white/60 sm:text-lg">
+        <p className="mb-8 text-base text-white/60 dark:text-gray-400 sm:text-lg">
           We can&apos;t seem to find the page you are looking for!
         </p>
         <a
           href={typeof window !== 'undefined' ? window.location.origin : '/'}
-          className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-medium text-black transition-colors hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-black"
+          className="inline-flex items-center gap-2 rounded-full bg-white dark:bg-gray-200 px-6 py-3 text-sm font-medium text-black dark:text-gray-900 transition-colors hover:bg-gray-200 dark:hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-black dark:focus:ring-offset-gray-950"
         >
           Back to homepage
         </a>

@@ -32,15 +32,15 @@ const StudentPortal: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 to-slate-100">
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 to-slate-100 dark:from-gray-900 dark:to-gray-800">
       <div className="flex flex-1">
         
-        <aside className="w-64 bg-white border-r border-gray-200 flex flex-col">
-          <div className="p-6 border-b border-gray-200">
+        <aside className="w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col">
+          <div className="p-6 border-b border-gray-200 dark:border-gray-700">
             <AastuLogo size="sm" className="mb-3" />
             <div className="flex items-center space-x-2 mt-2">
-              <GraduationCap className="h-5 w-5 text-blue-600" />
-              <p className="text-sm font-medium text-gray-700">Student Portal</p>
+              <GraduationCap className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+              <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Student Portal</p>
             </div>
           </div>
 
@@ -53,8 +53,8 @@ const StudentPortal: React.FC = () => {
                   onClick={() => setActiveTab(tab.id)}
                   className={`w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                     activeTab === tab.id
-                      ? 'bg-blue-50 text-blue-700'
-                      : 'text-gray-700 hover:bg-gray-50'
+                      ? 'bg-blue-50 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
+                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
                   }`}
                 >
                   <Icon className="h-5 w-5" />
@@ -64,14 +64,14 @@ const StudentPortal: React.FC = () => {
             })}
           </nav>
 
-          <div className="p-4 border-t border-gray-200">
-            <div className="mb-3 p-3 bg-gray-50 rounded-lg">
-              <p className="text-xs font-medium text-gray-700">{user?.name}</p>
-              <p className="text-xs text-gray-500">{user?.email}</p>
+          <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+            <div className="mb-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+              <p className="text-xs font-medium text-gray-700 dark:text-gray-300">{user?.name}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">{user?.email}</p>
             </div>
             <button
               onClick={logout}
-              className="w-full flex items-center space-x-2 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+              className="w-full flex items-center space-x-2 px-3 py-2 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
             >
               <LogOut className="h-4 w-4" />
               <span>Logout</span>
