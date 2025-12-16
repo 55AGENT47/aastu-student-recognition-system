@@ -87,7 +87,7 @@ export default function Overview() {
   return (
     <div className="space-y-8">
       <div>
-        <h2 className="text-3xl font-bold text-gray-900">Dashboard Overview</h2>
+        <h2 className="text-3xl font-bold text-gray-900">Overview</h2>
         <p className="mt-2 text-gray-600">Monitor your student recognition system performance</p>
       </div>
 

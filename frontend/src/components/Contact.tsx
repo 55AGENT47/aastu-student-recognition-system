@@ -92,7 +92,7 @@ const Contact = () => {
             </div>
           </div>
           
-          <div className="bg-gradient-to-br from-[#D4AF37] via-[#1E3A8A] to-white dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 animate-gradient rounded-2xl p-6 border border-gray-200 dark:border-gray-700">
+          <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
             <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Send us a Message</h3>
             
             <form className="space-y-4" onSubmit={handleSubmit}>

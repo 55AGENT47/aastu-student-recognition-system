@@ -92,6 +92,16 @@ class EventLog(Base):
     student = relationship("Student", back_populates="event_logs")
     camera = relationship("Camera", back_populates="event_logs")
 
+class MealSchedule(Base):
+    __tablename__ = "MealSchedules"
+    ScheduleID = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    MealName = Column(String(50), nullable=False, unique=True)
+    StartTime = Column(String(8), nullable=False)
+    EndTime = Column(String(8), nullable=False)
+    IsActive = Column(Boolean, default=True)
+    CreatedAt = Column(DateTime, server_default=func.now())
+    UpdatedAt = Column(DateTime, server_default=func.now(), onupdate=func.now())
+
 class CafeteriaLog(Base):
     __tablename__ = "CafeteriaLogs"
     LogID = Column(Integer, primary_key=True, index=True, autoincrement=True)
@@ -101,6 +111,9 @@ class CafeteriaLog(Base):
     MatchScore = Column(Float)
     Decision = Column(Boolean, nullable=False)
     MealStatus = Column(String(50), default='meal not eaten')
+    MealPeriod = Column(String(50))
+    IsDuplicateAttempt = Column(Boolean, default=False)
+    FirstEntryTime = Column(DateTime)
     Notes = Column(String(255))
     student = relationship("Student", back_populates="cafeteria_logs")
     camera = relationship("Camera", back_populates="cafeteria_logs")

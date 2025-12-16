@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { LayoutDashboard, Users, Clock, MapPin, LogOut, UtensilsCrossed, UserCog } from 'lucide-react';
+import { LayoutDashboard, Users, Clock, MapPin, LogOut, UtensilsCrossed, UserCog, Calendar } from 'lucide-react';
 import CafeAccessAdmin from './CafeAccessAdmin';
 import { useAuth } from '../context/AuthContext';
 import Overview from './Overview';
@@ -8,10 +8,11 @@ import MainLogs from './MainLogs';
 import CafeteriaLogs from './CafeteriaLogs';
 import AccessPoints from './AccessPoints';
 import ManageUsers from './ManageUsers';
+import MealScheduleConfig from './MealScheduleConfig';
 
 import AastuLogo from './AastuLogo';
 
-type Tab = 'overview' | 'students' | 'logs' | 'cafeteria-logs' | 'access-points' | 'cafe-access' | 'manage-users';
+type Tab = 'overview' | 'students' | 'logs' | 'cafeteria-logs' | 'access-points' | 'cafe-access' | 'manage-users' | 'meal-schedules';
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState<Tab>('overview');
@@ -24,6 +25,7 @@ export default function Dashboard() {
     { id: 'cafeteria-logs' as Tab, name: 'Cafeteria Logs', icon: UtensilsCrossed },
     { id: 'access-points' as Tab, name: 'Access Points', icon: MapPin },
     { id: 'cafe-access' as Tab, name: 'Cafeteria Access', icon: UtensilsCrossed },
+    { id: 'meal-schedules' as Tab, name: 'Meal Schedules', icon: Calendar },
     { id: 'manage-users' as Tab, name: 'Manage Users', icon: UserCog },
   ];
 
@@ -41,6 +43,8 @@ export default function Dashboard() {
         return <AccessPoints />;
       case 'cafe-access':
         return <CafeAccessAdmin />;
+      case 'meal-schedules':
+        return <MealScheduleConfig />;
       case 'manage-users':
         return <ManageUsers />;
       default:

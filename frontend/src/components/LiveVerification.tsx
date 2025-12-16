@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Camera, Upload, CheckCircle, XCircle, User, Square, Smartphone } from 'lucide-react';
+import { Camera, Upload, CheckCircle, XCircle, User, Square, Smartphone, AlertTriangle } from 'lucide-react';
 import { apiService } from '../services/api';
 import { Student } from '../types';
 import IPCameraConfig from './IPCameraConfig';
+import DuplicateEntryAlert from './DuplicateEntryAlert';
 
 interface VerificationDisplay {
   success: boolean;
@@ -11,6 +12,9 @@ interface VerificationDisplay {
   timestamp: string;
   access_granted: boolean;
   error?: string;
+  is_duplicate?: boolean;
+  first_entry_time?: string;
+  meal_period?: string;
 }
 
 interface LiveVerificationProps {
@@ -33,6 +37,8 @@ export default function LiveVerification({ cameraId = 1, isActive = true, ipCame
   const [verifying, setVerifying] = useState(false);
   const [result, setResult] = useState<VerificationDisplay | null>(null);
   const [cameraActive, setCameraActive] = useState(false);
+  const [showDuplicateAlert, setShowDuplicateAlert] = useState(false);
+  const [duplicateData, setDuplicateData] = useState<any>(null);
 
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [detectionMessage, setDetectionMessage] = useState<string | null>(null);
@@ -189,10 +195,15 @@ export default function LiveVerification({ cameraId = 1, isActive = true, ipCame
         return false;
       }
       setDetectionMessage(`Detected ${count} face${count > 1 ? 's' : ''}.`);
-      setDetectedFaces((detection.faces || []).map((face: DetectedFace) => ({
-        ...face,
-        color: face.identified ? 'green' : 'red'
-      })));
+      setDetectedFaces((detection.faces || []).map((face: DetectedFace) => {
+        const isConfident = face.confidence >= 0.55;
+        return {
+          ...face,
+          identified: face.identified && isConfident,
+          color: face.identified && isConfident ? 'green' : 'red',
+          name: face.identified && isConfident ? face.name : 'Unknown'
+        };
+      }));
       return true;
     } catch (error) {
       console.error('Face detection failed:', error);
@@ -223,20 +234,42 @@ export default function LiveVerification({ cameraId = 1, isActive = true, ipCame
       }
 
       const data = await apiService.verifyFace(imageData, cameraId);
+      const confidence = (data as any).confidence || 0;
+      const isConfident = confidence >= 0.55;
+      
+      if ((data as any).is_duplicate) {
+        setDuplicateData({
+          studentName: `${(data as any).student?.FirstName} ${(data as any).student?.LastName}`,
+          firstEntryTime: (data as any).first_entry_time,
+          currentTime: new Date().toISOString(),
+          mealPeriod: (data as any).meal_period
+        });
+        setShowDuplicateAlert(true);
+      }
+      
       setResult({
         ...data,
-        student: (data as any).student ?? null,
-        confidence: (data as any).confidence || 0,
-        access_granted: (data as any).access_granted || false,
+        student: isConfident ? ((data as any).student ?? null) : null,
+        confidence: confidence,
+        access_granted: isConfident && ((data as any).access_granted || false),
         timestamp: data.timestamp || new Date().toISOString(),
-        error: data.success ? undefined : ((data as any).message || 'Unable to identify student')
+        error: data.success && isConfident ? undefined : ((data as any).message || 'Unable to identify student'),
+        is_duplicate: (data as any).is_duplicate,
+        first_entry_time: (data as any).first_entry_time,
+        meal_period: (data as any).meal_period
       });
       setDetectedFaces((prev) =>
         prev.map((face) => {
           if ((data as any).student && Number(face.student_id) === Number((data as any).student.StudentID)) {
-            return { ...face, identified: true, color: 'green', name: (data as any).student.FirstName + ' ' + (data as any).student.LastName };
+            const faceConfident = confidence >= 0.55;
+            return { 
+              ...face, 
+              identified: faceConfident, 
+              color: faceConfident ? 'green' : 'red', 
+              name: faceConfident ? (data as any).student.FirstName + ' ' + (data as any).student.LastName : 'Unknown'
+            };
           }
-          return face;
+          return { ...face, identified: false, color: 'red', name: 'Unknown' };
         })
       );
     } catch (error) {
@@ -378,7 +411,7 @@ export default function LiveVerification({ cameraId = 1, isActive = true, ipCame
   }, [ipCameraActive, ipCameraUrl]);
 
   useEffect(() => {
-    if ((cameraActive || ipCameraActive) && !verifying && !result?.success) {
+    if ((cameraActive || ipCameraActive) && !verifying) {
       autoCaptureIntervalRef.current = setInterval(() => {
         captureFrame();
       }, 3000);
@@ -394,7 +427,7 @@ export default function LiveVerification({ cameraId = 1, isActive = true, ipCame
         autoCaptureIntervalRef.current = null;
       }
     };
-  }, [cameraActive, ipCameraActive, verifying, result?.success, captureFrame]);
+  }, [cameraActive, ipCameraActive, verifying, captureFrame]);
 
   useEffect(() => {
     if (!isActive) {
@@ -517,13 +550,23 @@ export default function LiveVerification({ cameraId = 1, isActive = true, ipCame
   };
 
   return (
-    <div className="space-y-6">
+    <>
+      {showDuplicateAlert && duplicateData && (
+        <DuplicateEntryAlert
+          studentName={duplicateData.studentName}
+          firstEntryTime={duplicateData.firstEntryTime}
+          currentTime={duplicateData.currentTime}
+          mealPeriod={duplicateData.mealPeriod}
+          onClose={() => setShowDuplicateAlert(false)}
+        />
+      )}
+      <div className="space-y-6">
       <div>
         <h2 className="text-3xl font-bold text-gray-900">{ipCameraOnly ? 'IP Camera Verification' : 'Live Verification'}</h2>
         <p className="mt-2 text-gray-600">{ipCameraOnly ? 'Verify student identity using IP camera' : 'Verify student identity using camera or uploaded images'}</p>
       </div>
 
-      <div className={`grid grid-cols-1 gap-6 items-stretch ${ipCameraOnly ? 'md:grid-cols-2' : 'md:grid-cols-3'}`}>
+      <div className={`grid grid-cols-1 gap-6 items-stretch ${ipCameraOnly ? 'lg:grid-cols-[1fr_1.5fr]' : 'lg:grid-cols-[1fr_1fr_1.5fr]'}`}>
 
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 h-full flex flex-col">
           <div className="mb-4">
@@ -710,16 +753,10 @@ export default function LiveVerification({ cameraId = 1, isActive = true, ipCame
                   <canvas ref={canvasRef} className="hidden" />
 
                 </div>
-                <div className={`text-center text-sm p-3 rounded-lg ${
-                  result?.success ? 'bg-green-50 text-green-700' : 'bg-blue-50 text-gray-600'
-                }`}>
+                <div className="text-center text-sm p-3 rounded-lg bg-blue-50 text-gray-600">
                   <div className="flex items-center justify-center space-x-2">
-                    <div className={`w-2 h-2 rounded-full ${
-                      result?.success ? 'bg-green-500' : 'bg-blue-500 animate-pulse'
-                    }`}></div>
-                    <span>
-                      {result?.success ? 'Recognition complete' : 'Auto-detecting faces every 3 seconds...'}
-                    </span>
+                    <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></div>
+                    <span>Auto-detecting faces every 3 seconds...</span>
                   </div>
                 </div>
                 
@@ -805,7 +842,18 @@ export default function LiveVerification({ cameraId = 1, isActive = true, ipCame
           )}
 
           {result && (
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div className={`bg-white dark:bg-gray-800 rounded-xl shadow-sm border-2 overflow-hidden ${
+              result.is_duplicate ? 'border-red-500 animate-pulse' : 'border-gray-200 dark:border-gray-700'
+            }`}>
+              {result.is_duplicate && (
+                <div className="bg-red-600 text-white px-6 py-3 flex items-center space-x-3">
+                  <AlertTriangle className="h-6 w-6 animate-bounce" />
+                  <div>
+                    <p className="font-bold text-lg">DUPLICATE ENTRY DETECTED!</p>
+                    <p className="text-sm">Student already entered during {result.meal_period} period</p>
+                  </div>
+                </div>
+              )}
               <div className="p-6">
                 <div className="flex flex-col md:flex-row gap-6">
                   {/* Student Profile Image */}
@@ -847,9 +895,9 @@ export default function LiveVerification({ cameraId = 1, isActive = true, ipCame
                     <div className="space-y-4">
                       <div>
                         <h3 className="text-lg font-semibold text-gray-900">
-                          {result.student ? `${result.student.FirstName} ${result.student.LastName}` : 'Unknown Student'}
+                          {result.student && result.confidence >= 0.55 ? `${result.student.FirstName} ${result.student.LastName}` : 'Unknown Student'}
                         </h3>
-                        <p className="text-sm text-gray-500">Student ID: {(result.student as any)?.StudentIdentifier || result.student?.StudentID || 'N/A'}</p>
+                        <p className="text-sm text-gray-500">Student ID: {result.student && result.confidence >= 0.55 ? ((result.student as any)?.StudentIdentifier || result.student?.StudentID) : 'N/A'}</p>
                       </div>
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -902,17 +950,39 @@ export default function LiveVerification({ cameraId = 1, isActive = true, ipCame
                         </div>
                       </div>
 
-                      {result.student && (
-                        <div className="pt-4 border-t border-gray-200">
-                          <p className="text-sm font-medium text-gray-500 mb-2">Cafeteria Access</p>
+                      {result.is_duplicate && result.first_entry_time && (
+                        <div className="pt-4 border-t-2 border-red-200 dark:border-red-800">
+                          <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-4">
+                            <p className="text-sm font-bold text-red-800 dark:text-red-300 mb-2 flex items-center">
+                              <AlertTriangle className="h-4 w-4 mr-2" />
+                              Duplicate Entry Alert
+                            </p>
+                            <div className="space-y-1 text-sm">
+                              <p className="text-red-700 dark:text-red-400">
+                                <strong>First Entry:</strong> {new Date(result.first_entry_time).toLocaleTimeString()}
+                              </p>
+                              <p className="text-red-700 dark:text-red-400">
+                                <strong>Meal Period:</strong> {result.meal_period}
+                              </p>
+                              <p className="text-red-700 dark:text-red-400 font-semibold mt-2">
+                                ⚠️ Access Denied - Already entered this meal period
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {result.student && !result.is_duplicate && (
+                        <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+                          <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Cafeteria Access</p>
                           <div className="flex items-center">
                             {(result.student as any).CafeAccess ? (
-                              <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                              <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
                                 <CheckCircle className="h-4 w-4 mr-1" />
                                 Access Allowed
                               </span>
                             ) : (
-                              <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800">
+                              <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
                                 <XCircle className="h-4 w-4 mr-1" />
                                 No Access
                               </span>
@@ -929,5 +999,6 @@ export default function LiveVerification({ cameraId = 1, isActive = true, ipCame
         </div>
       </div>
     </div>
+    </>
   );
 }

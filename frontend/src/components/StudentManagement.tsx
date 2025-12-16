@@ -246,7 +246,7 @@ export default function StudentManagement({ viewOnly = false }: StudentManagemen
   const filteredStudents = students.filter(
     (student) =>
       `${student.FirstName} ${student.LastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      student.StudentID.toString().toLowerCase().includes(searchTerm.toLowerCase()) ||
+      student.StudentIdentifier.toLowerCase().includes(searchTerm.toLowerCase()) ||
       student.Email.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -555,7 +555,7 @@ export default function StudentManagement({ viewOnly = false }: StudentManagemen
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{student.StudentID}</div>
+                    <div className="text-sm text-gray-900">{student.StudentIdentifier}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900">{(student as any).Department || 'N/A'}</div>

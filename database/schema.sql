@@ -149,3 +149,30 @@ VALUES ('cafeteria@aastu.edu.et', '$2b$12$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.o
 
 INSERT IGNORE INTO MainGateSecurity (Username, PasswordHash, FullName, IsActive) 
 VALUES ('security@aastu.edu.et', '$2b$12$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW', 'Main Gate Security', TRUE);
+
+
+-- Meal Schedule Table
+CREATE TABLE IF NOT EXISTS MealSchedules (
+    ScheduleID INT AUTO_INCREMENT PRIMARY KEY,
+    MealName VARCHAR(50) NOT NULL,
+    StartTime TIME NOT NULL,
+    EndTime TIME NOT NULL,
+    IsActive BOOLEAN DEFAULT TRUE,
+    CreatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UpdatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY unique_meal_name (MealName)
+) ENGINE=InnoDB;
+
+-- Insert default meal schedules
+INSERT IGNORE INTO MealSchedules (MealName, StartTime, EndTime, IsActive) VALUES
+('Breakfast', '07:00:00', '07:50:00', TRUE),
+('Lunch', '12:00:00', '12:30:00', TRUE),
+('Dinner', '17:00:00', '19:00:00', TRUE);
+
+-- Modify CafeteriaLogs table to add meal tracking columns
+ALTER TABLE CafeteriaLogs 
+ADD COLUMN IF NOT EXISTS MealPeriod VARCHAR(50) DEFAULT NULL,
+ADD COLUMN IF NOT EXISTS IsDuplicateAttempt BOOLEAN DEFAULT FALSE,
+ADD COLUMN IF NOT EXISTS FirstEntryTime DATETIME DEFAULT NULL,
+ADD INDEX idx_access_date (AccessTime),
+ADD INDEX idx_meal_period (MealPeriod);

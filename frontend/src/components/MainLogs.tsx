@@ -100,8 +100,8 @@ export default function MainLogs() {
     if (!studentId) return { name: 'Unknown', identifier: 'N/A' };
     const student = students.find(s => s.StudentID === studentId);
     return student 
-      ? { name: `${student.FirstName} ${student.LastName}`, identifier: String(studentId) }
-      : { name: 'Unknown', identifier: String(studentId) };
+      ? { name: `${student.FirstName} ${student.LastName}`, identifier: student.StudentIdentifier }
+      : { name: 'Unknown', identifier: 'N/A' };
   };
 
   const getCameraLocation = (cameraId: number): string => {
@@ -111,9 +111,7 @@ export default function MainLogs() {
 
   const allLogs = eventLogs
     .map(log => {
-      const studentInfo = log.FirstName && log.LastName 
-        ? { name: `${log.FirstName} ${log.LastName}`, identifier: log.StudentID || 'N/A' }
-        : getStudentInfo(log.StudentID);
+      const studentInfo = getStudentInfo(log.StudentID);
       return {
         ...log,
         studentName: studentInfo.name,
@@ -151,7 +149,7 @@ export default function MainLogs() {
   const totalCount = allLogs.length;
   const successCount = allLogs.filter(log => log.isSuccess).length;
   const failedCount = totalCount - successCount;
-  const isAdmin = userRole === 'admin';
+  const isAdmin = userRole === 'admin' || userRole === 'main_gate';
 
   const handleClearLogs = async () => {
     if (!isAdmin) return;

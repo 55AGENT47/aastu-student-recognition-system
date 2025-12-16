@@ -100,8 +100,8 @@ export default function CafeteriaLogs() {
     if (!studentId) return { name: 'Unknown', identifier: 'N/A' };
     const student = students.find(s => s.StudentID === studentId);
     return student 
-      ? { name: `${student.FirstName} ${student.LastName}`, identifier: String(studentId) }
-      : { name: 'Unknown', identifier: String(studentId) };
+      ? { name: `${student.FirstName} ${student.LastName}`, identifier: student.StudentIdentifier }
+      : { name: 'Unknown', identifier: 'N/A' };
   };
 
   const getCameraLocation = (cameraId: number | null): string => {
@@ -112,9 +112,7 @@ export default function CafeteriaLogs() {
 
   const allLogs = cafeteriaLogs
     .map(log => {
-      const studentInfo = log.FirstName && log.LastName 
-        ? { name: `${log.FirstName} ${log.LastName}`, identifier: log.StudentID || 'N/A' }
-        : getStudentInfo(log.StudentID);
+      const studentInfo = getStudentInfo(log.StudentID);
       return {
         ...log,
         studentName: studentInfo.name,
@@ -131,7 +129,35 @@ export default function CafeteriaLogs() {
     })
     .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 
-  const filteredLogs = allLogs.filter(log => {
+  const calculateAndFixDuplicatesByMealPeriod = (logs: typeof allLogs) => {
+    const logsByStudentDateAndMeal = logs.reduce((acc, log) => {
+      const dateKey = new Date(log.timestamp).toDateString();
+      const mealPeriod = (log as any).MealPeriod || 'Unknown';
+      const key = `${log.studentIdentifier}-${dateKey}-${mealPeriod}`;
+      
+      if (!acc[key]) {
+        acc[key] = [];
+      }
+      acc[key].push(log);
+      return acc;
+    }, {} as Record<string, typeof allLogs>);
+    
+    Object.values(logsByStudentDateAndMeal).forEach(mealLogs => {
+      const sortedLogs = mealLogs.sort((a, b) => 
+        new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+      );
+      
+      sortedLogs.forEach((log, index) => {
+        (log as any).IsDuplicateAttempt = index === 0 ? 0 : 1;
+      });
+    });
+    
+    return logs;
+  };
+
+  const logsWithDuplicates = calculateAndFixDuplicatesByMealPeriod(allLogs);
+
+  const filteredLogs = logsWithDuplicates.filter(log => {
     if (filter === 'success' && !log.isSuccess) return false;
     if (filter === 'failed' && log.isSuccess) return false;
     if (dateFilter.start) {
@@ -152,7 +178,7 @@ export default function CafeteriaLogs() {
   const totalCount = allLogs.length;
   const successCount = allLogs.filter(log => log.isSuccess).length;
   const failedCount = totalCount - successCount;
-  const isAdmin = userRole === 'admin';
+  const isAdmin = userRole === 'admin' || userRole === 'cafeteria';
 
   const handleClearLogs = async () => {
     if (!isAdmin) return;
@@ -303,7 +329,7 @@ export default function CafeteriaLogs() {
                     scope="col"
                     className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                   >
-                    Location
+                    Meal Period
                   </th>
                   <th
                     scope="col"
@@ -315,13 +341,21 @@ export default function CafeteriaLogs() {
                     scope="col"
                     className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                   >
+                    Duplicate
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  >
                     Confidence
                   </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {filteredLogs.map((log) => (
-                  <tr key={log.LogID} className="hover:bg-gray-50">
+                  <tr key={log.LogID} className={`hover:bg-gray-50 ${
+                    (log as any).IsDuplicateAttempt ? 'bg-red-50' : ''
+                  }`}>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         {log.StudentID ? (
@@ -344,8 +378,15 @@ export default function CafeteriaLogs() {
                       <div className="text-sm text-gray-900">{log.formattedTime}</div>
                       <div className="text-sm text-gray-500">{log.timeAgo}</div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      Cafeteria
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                        (log as any).MealPeriod === 'Breakfast' ? 'bg-yellow-100 text-yellow-800' :
+                        (log as any).MealPeriod === 'Lunch' ? 'bg-blue-100 text-blue-800' :
+                        (log as any).MealPeriod === 'Dinner' ? 'bg-purple-100 text-purple-800' :
+                        'bg-gray-100 text-gray-800'
+                      }`}>
+                        {(log as any).MealPeriod || 'N/A'}
+                      </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       {log.isSuccess ? (
@@ -355,6 +396,17 @@ export default function CafeteriaLogs() {
                       ) : (
                         <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
                           Failed
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {(log as any).IsDuplicateAttempt ? (
+                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                          ⚠️ Yes
+                        </span>
+                      ) : (
+                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
+                          No
                         </span>
                       )}
                     </td>

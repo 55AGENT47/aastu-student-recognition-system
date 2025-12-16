@@ -59,7 +59,7 @@ async def reset_password(request: ResetPasswordRequest, db: Session = Depends(ge
     if not student:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Student not found or invalid credentials")
     
-    student.PasswordHash = get_password_hash(request.new_password)
+    setattr(student, 'PasswordHash', get_password_hash(request.new_password))
     db.commit()
     
     return {"message": "Password reset successfully"}

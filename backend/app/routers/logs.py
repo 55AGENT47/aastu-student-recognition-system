@@ -186,8 +186,8 @@ def clear_logs(
         log_type: Type of logs to clear ('access', 'cafeteria', or 'all')
         days_old: If provided, only delete logs older than this many days
     """
-    if current_user.role != "admin":
-        raise HTTPException(status_code=403, detail="Only administrators can clear logs")
+    if current_user.role not in ["admin", "cafeteria", "main_gate"]:
+        raise HTTPException(status_code=403, detail="Only administrators and security personnel can clear logs")
     
     try:
         timestamp_filter = None

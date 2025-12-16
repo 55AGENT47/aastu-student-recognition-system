@@ -1,13 +1,14 @@
 import { useState } from 'react';
-import { Camera, LogOut, ChefHat, LayoutDashboard, UtensilsCrossed, Smartphone } from 'lucide-react';
+import { Camera, LogOut, ChefHat, LayoutDashboard, UtensilsCrossed, Smartphone, Calendar } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import LiveVerification from './LiveVerification';
 import CafeteriaLogs from './CafeteriaLogs';
 import Overview from './Overview';
+import MealScheduleConfig from './MealScheduleConfig';
 
 import AastuLogo from './AastuLogo';
 
-type Tab = 'overview' | 'verification' | 'logs' | 'ip-camera';
+type Tab = 'overview' | 'verification' | 'logs' | 'ip-camera' | 'meal-schedules';
 
 export default function CafeteriaSecurityPortal() {
   const [activeTab, setActiveTab] = useState<Tab>('overview');
@@ -18,6 +19,7 @@ export default function CafeteriaSecurityPortal() {
     { id: 'verification' as Tab, name: 'Live Verification', icon: Camera },
     { id: 'ip-camera' as Tab, name: 'IP Camera Verification', icon: Smartphone },
     { id: 'logs' as Tab, name: 'Cafeteria Logs', icon: UtensilsCrossed },
+    { id: 'meal-schedules' as Tab, name: 'Meal Schedules', icon: Calendar },
   ];
 
   const renderContent = () => {
@@ -30,6 +32,8 @@ export default function CafeteriaSecurityPortal() {
         return <LiveVerification key="ip-camera-verification" cameraId={2} isActive={activeTab === 'ip-camera'} ipCameraOnly={true} />;
       case 'logs':
         return <CafeteriaLogs />;
+      case 'meal-schedules':
+        return <MealScheduleConfig />;
       default:
         return <Overview />;
     }
