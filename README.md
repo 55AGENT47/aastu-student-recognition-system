@@ -273,7 +273,9 @@ For issues and questions, please create an issue in the repository.
 
 ## Contributors
 
-- Your Name/Team
+- Usman Aman
+- Khalid Ibrahim
+- Yohannes wondimu
 
 ## Acknowledgments
 
