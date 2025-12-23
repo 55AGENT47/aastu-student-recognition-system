@@ -107,6 +107,11 @@ def update_student(
             db.rollback()
     elif photo_changed:
         try:
+            # Delete old face data first
+            db.query(models.FacialProfile).filter(models.FacialProfile.StudentID == student_id).delete(synchronize_session=False)
+            db.query(models.KnownFace).filter(models.KnownFace.student_id == student_id).delete(synchronize_session=False)
+            db.commit()
+            
             def _bg_register_and_reload(student_id, name, b64_image):
                 db_sess = SessionLocal()
                 try:

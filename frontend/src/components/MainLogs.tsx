@@ -1,8 +1,9 @@
 // src/components/AccessLogs.tsx
 import { useEffect, useState } from 'react';
-import { Filter, Download, XCircle, Trash2 } from 'lucide-react';
+import { Filter, Download, XCircle, Trash2, UserCircle } from 'lucide-react';
 import { EventLog, Student, Camera } from '../types';
 import { apiService } from '../services/api';
+import { OptimizedStudentImage } from '../hooks/useOptimizedImage.tsx';
 
 const getTimeAgo = (dateString: string): string => {
   const date = new Date(dateString);
@@ -49,7 +50,11 @@ export default function MainLogs() {
     };
     
     window.addEventListener('studentProfileUpdated', handleProfileUpdate);
-    return () => window.removeEventListener('studentProfileUpdated', handleProfileUpdate);
+    window.addEventListener('studentImageUpdated', handleProfileUpdate);
+    return () => {
+      window.removeEventListener('studentProfileUpdated', handleProfileUpdate);
+      window.removeEventListener('studentImageUpdated', handleProfileUpdate);
+    };
   }, []);
 
   const fetchLogs = async () => {
@@ -321,16 +326,13 @@ export default function MainLogs() {
                   <tr key={log.LogID} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
-                        {log.StudentID ? (
-                          <img
-                            src={`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'}/api/images/student/${log.StudentID}?size=thumbnail`}
-                            alt={log.studentName}
-                            className="h-10 w-10 rounded-full object-cover mr-3"
-                            onError={(e) => { (e.target as HTMLImageElement).src = '/default-avatar.png'; }}
-                          />
-                        ) : (
-                          <div className="h-10 w-10 rounded-full bg-gray-200 mr-3" />
-                        )}
+                        <OptimizedStudentImage
+                          studentId={log.StudentID}
+                          size="thumbnail"
+                          className="h-10 w-10 rounded-full mr-3"
+                          alt={log.studentName}
+                          fallbackIcon={<UserCircle className="h-6 w-6 text-blue-600" />}
+                        />
                         <div>
                           <div className="text-sm font-medium text-gray-900">{log.studentName}</div>
                           <div className="text-sm text-gray-500">ID: {log.studentIdentifier}</div>

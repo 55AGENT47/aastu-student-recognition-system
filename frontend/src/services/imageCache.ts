@@ -75,6 +75,11 @@ class ImageCache {
       url.includes(`/student/${studentId}`)
     );
     studentUrls.forEach(url => this.remove(url));
+    
+    // Dispatch event to notify components about image update
+    window.dispatchEvent(new CustomEvent('studentImageUpdated', { 
+      detail: { studentId } 
+    }));
   }
 
   size(): number {

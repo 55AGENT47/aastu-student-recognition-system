@@ -4,6 +4,7 @@ import { apiService } from '../services/api';
 import { Student } from '../types';
 import IPCameraConfig from './IPCameraConfig';
 import DuplicateEntryAlert from './DuplicateEntryAlert';
+import { OptimizedStudentImage } from '../hooks/useOptimizedImage.tsx';
 
 interface VerificationDisplay {
   success: boolean;
@@ -347,7 +348,22 @@ export default function LiveVerification({ cameraId = 1, isActive = true, ipCame
     } else if (cameraMode === 'webcam') {
       startWebcam();
     }
+    
+    // Listen for student profile updates to refresh verification results
+    const handleProfileUpdate = () => {
+      // If we have a current result, we might want to refresh it
+      if (result && result.student) {
+        // Optionally refresh the result or just let the OptimizedStudentImage handle it
+      }
+    };
+    
+    window.addEventListener('studentProfileUpdated', handleProfileUpdate);
+    window.addEventListener('studentImageUpdated', handleProfileUpdate);
+    
     return () => {
+      window.removeEventListener('studentProfileUpdated', handleProfileUpdate);
+      window.removeEventListener('studentImageUpdated', handleProfileUpdate);
+      
       if (autoCaptureIntervalRef.current) {
         clearInterval(autoCaptureIntervalRef.current);
         autoCaptureIntervalRef.current = null;
@@ -861,16 +877,12 @@ export default function LiveVerification({ cameraId = 1, isActive = true, ipCame
                     <div className="relative">
                       <div className="aspect-square rounded-xl overflow-hidden border-2 border-gray-200 bg-gray-100">
                         {result.student ? (
-                          <img
-                            src={(result.student as any).PhotoPath ? 
-                              `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'}/api/images/student/${result.student.StudentID}?size=medium&format=webp&no_cache=false` : 
-                              '/default-avatar.png'}
-                            alt={`${result.student.FirstName} ${result.student.LastName}`}
+                          <OptimizedStudentImage
+                            studentId={result.student.StudentID}
+                            size="medium"
                             className="w-full h-full object-cover"
-                            loading="lazy"
-                            onError={(e) => {
-                              (e.target as HTMLImageElement).src = '/default-avatar.png';
-                            }}
+                            alt={`${result.student.FirstName} ${result.student.LastName}`}
+                            fallbackIcon={<User className="h-24 w-24 text-gray-400" />}
                           />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center bg-gray-100">

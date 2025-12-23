@@ -29,7 +29,7 @@ const Header = () => {
                 <span className="text-[#D4AF37]">AAS</span>
                 <span className="text-[#1E3A8A] dark:text-blue-400">TU</span>
               </h1>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Facial Recognition</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Student Facial Recognition</p>
             </div>
           </div>
 

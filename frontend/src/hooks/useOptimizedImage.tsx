@@ -26,6 +26,7 @@ export const useOptimizedImage = (studentId: number | null, options: UseOptimize
   const [src, setSrc] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const loadImage = useCallback(async () => {
     if (!studentId) {
@@ -38,13 +39,13 @@ export const useOptimizedImage = (studentId: number | null, options: UseOptimize
 
     try {
       const API_BASE = (import.meta as any).env.VITE_API_BASE_URL ?? '';
-      const imageUrl = `${API_BASE}/api/images/student/${studentId}?size=${size}&format=${supportsWebP ? 'webp' : 'jpeg'}`;
+      const imageUrl = `${API_BASE}/api/images/student/${studentId}?size=${size}&format=${supportsWebP ? 'webp' : 'jpeg'}&t=${Date.now()}`;
       
       try {
         setSrc(await imageCache.getImage(imageUrl));
       } catch (optimizedError) {
         if (supportsWebP) {
-          const jpegUrl = `${API_BASE}/api/images/student/${studentId}?size=${size}&format=jpeg`;
+          const jpegUrl = `${API_BASE}/api/images/student/${studentId}?size=${size}&format=jpeg&t=${Date.now()}`;
           setSrc(await imageCache.getImage(jpegUrl));
         } else {
           throw optimizedError;
@@ -57,13 +58,30 @@ export const useOptimizedImage = (studentId: number | null, options: UseOptimize
       setSrc(fallback || null);
       setLoading(false);
     }
-  }, [studentId, size, fallback]);
+  }, [studentId, size, fallback, refreshKey]);
 
   const retry = useCallback(() => loadImage(), [loadImage]);
 
   useEffect(() => {
     loadImage();
   }, [loadImage]);
+
+  // Listen for student image updates
+  useEffect(() => {
+    const handleImageUpdate = (event: CustomEvent) => {
+      if (event.detail.studentId === studentId) {
+        setRefreshKey(prev => prev + 1);
+      }
+    };
+
+    window.addEventListener('studentImageUpdated', handleImageUpdate as EventListener);
+    window.addEventListener('studentProfileUpdated', handleImageUpdate as EventListener);
+    
+    return () => {
+      window.removeEventListener('studentImageUpdated', handleImageUpdate as EventListener);
+      window.removeEventListener('studentProfileUpdated', handleImageUpdate as EventListener);
+    };
+  }, [studentId]);
 
   return { src, loading, error, retry };
 };

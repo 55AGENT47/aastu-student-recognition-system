@@ -4,6 +4,7 @@ import { Student } from '../types';
 import { apiService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { OptimizedStudentImage } from '../hooks/useOptimizedImage.tsx';
+import { studentImageService } from '../services/studentImageService';
 
 
 interface StudentManagementProps {
@@ -71,6 +72,11 @@ export default function StudentManagement({ viewOnly = false }: StudentManagemen
       setStudents([student, ...students]);
       setShowAddModal(false);
       resetForm();
+      
+      // Handle image update for new student
+      if (student.StudentID) {
+        studentImageService.handleImageUpdate(student.StudentID);
+      }
       
       if (newStudent.PhotoPath) {
         alert('Student registered successfully! Face has been automatically registered for recognition.');

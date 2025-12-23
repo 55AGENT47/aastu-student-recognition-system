@@ -4,6 +4,7 @@ import { Student } from '../types';
 import { apiService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { OptimizedStudentImage } from '../hooks/useOptimizedImage.tsx';
+import { studentImageService } from '../services/studentImageService';
 
 export default function StudentProfile() {
   const [student, setStudent] = useState<Student | null>(null);
@@ -101,8 +102,10 @@ export default function StudentProfile() {
       setStudent(updatedStudent);
       setEditing(false);
 
-      // Trigger a custom event to notify other components about the profile update
-      window.dispatchEvent(new CustomEvent('studentProfileUpdated', { detail: { studentId: student.StudentID } }));
+      // Handle profile update - clears cache and notifies all components
+      if (student.StudentID) {
+        studentImageService.handleProfileUpdate(student.StudentID);
+      }
 
       if (editForm.PhotoPath && editForm.PhotoPath !== (student as any).PhotoPath) {
         alert('Profile updated successfully! Your face has been re-registered for recognition.');
