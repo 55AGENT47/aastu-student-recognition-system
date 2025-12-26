@@ -1,40 +1,28 @@
 import { useState } from 'react';
-import { Camera, LogOut, ChefHat, LayoutDashboard, UtensilsCrossed, Smartphone, Calendar } from 'lucide-react';
+import { LogOut, GraduationCap, LayoutDashboard, UserCheck } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import LiveVerification from './LiveVerification';
-import CafeteriaLogs from './CafeteriaLogs';
 import Overview from './Overview';
-import MealScheduleConfig from './MealScheduleConfig';
-import DuplicateAlert from './DuplicateAlert';
+import PendingStudents from './PendingStudents';
 
 import AastuLogo from './AastuLogo';
 
-type Tab = 'overview' | 'verification' | 'logs' | 'ip-camera' | 'meal-schedules';
+type Tab = 'overview' | 'pending-students';
 
-export default function CafeteriaSecurityPortal() {
+export default function RegistrarPortal() {
   const [activeTab, setActiveTab] = useState<Tab>('overview');
   const { user, logout } = useAuth();
 
   const tabs = [
     { id: 'overview' as Tab, name: 'Overview', icon: LayoutDashboard },
-    { id: 'verification' as Tab, name: 'Live Verification', icon: Camera },
-    { id: 'ip-camera' as Tab, name: 'IP Camera Verification', icon: Smartphone },
-    { id: 'logs' as Tab, name: 'Cafeteria Logs', icon: UtensilsCrossed },
-    { id: 'meal-schedules' as Tab, name: 'Meal Schedules', icon: Calendar },
+    { id: 'pending-students' as Tab, name: 'Student Approvals', icon: UserCheck },
   ];
 
   const renderContent = () => {
     switch (activeTab) {
       case 'overview':
         return <Overview />;
-      case 'verification':
-        return <LiveVerification key="live-verification" cameraId={2} isActive={activeTab === 'verification'} webcamOnly={true} />;
-      case 'ip-camera':
-        return <LiveVerification key="ip-camera-verification" cameraId={2} isActive={activeTab === 'ip-camera'} ipCameraOnly={true} />;
-      case 'logs':
-        return <CafeteriaLogs />;
-      case 'meal-schedules':
-        return <MealScheduleConfig />;
+      case 'pending-students':
+        return <PendingStudents />;
       default:
         return <Overview />;
     }
@@ -42,14 +30,13 @@ export default function CafeteriaSecurityPortal() {
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
-      <DuplicateAlert />
       <div className="flex flex-1">
         <aside className="w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col">
           <div className="p-6 border-b border-gray-200 dark:border-gray-700">
             <AastuLogo size="sm" className="mb-3" />
             <div className="flex items-center space-x-2 mt-2">
-              <ChefHat className="h-5 w-5 text-orange-600 dark:text-orange-400" />
-              <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Cafeteria Security Portal</p>
+              <GraduationCap className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+              <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Registrar Portal</p>
             </div>
           </div>
 
@@ -62,7 +49,7 @@ export default function CafeteriaSecurityPortal() {
                   onClick={() => setActiveTab(tab.id)}
                   className={`w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                     activeTab === tab.id
-                      ? 'bg-orange-50 dark:bg-orange-900 text-orange-700 dark:text-orange-300'
+                      ? 'bg-purple-50 dark:bg-purple-900 text-purple-700 dark:text-purple-300'
                       : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
                   }`}
                 >
@@ -75,14 +62,14 @@ export default function CafeteriaSecurityPortal() {
 
           <div className="p-4 border-t border-gray-200 dark:border-gray-700">
             <div className="flex items-center space-x-3 mb-3">
-              <div className="h-8 w-8 rounded-full bg-orange-600 dark:bg-orange-500 flex items-center justify-center">
+              <div className="h-8 w-8 rounded-full bg-purple-600 dark:bg-purple-500 flex items-center justify-center">
                 <span className="text-sm font-medium text-white">
-                  {user?.name?.charAt(0) || 'C'}
+                  {user?.name?.charAt(0) || 'R'}
                 </span>
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                  {user?.name || 'Cafeteria Security'}
+                  {user?.name || 'Registrar Officer'}
                 </p>
                 <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{user?.email}</p>
               </div>

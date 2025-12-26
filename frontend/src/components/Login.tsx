@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Eye, EyeOff, UserCheck, ChefHat, Shield, Home } from 'lucide-react';
+import { Eye, EyeOff, UserCheck, ChefHat, Shield, Home, GraduationCap } from 'lucide-react';
 import AastuLogo from './AastuLogo';
 
 export default function Login() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [role, setRole] = useState<'admin' | 'cafeteria' | 'main_gate'>('admin');
+  const [role, setRole] = useState<'admin' | 'cafeteria' | 'main_gate' | 'registrar'>('admin');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const { login } = useAuth();
@@ -18,7 +18,7 @@ export default function Login() {
     setError('');
 
     try {
-      await login(username, password, role);
+      await login(username, password, role as any);
     } catch (error) {
       if (error instanceof Error) {
         setError(error.message || 'Invalid credentials');
@@ -32,6 +32,7 @@ export default function Login() {
 
   const roleOptions = [
     { value: 'admin' as const, label: 'Administrator', icon: UserCheck },
+    { value: 'registrar' as const, label: 'Registrar Officer', icon: GraduationCap },
     { value: 'cafeteria' as const, label: 'Cafeteria Security', icon: ChefHat },
     { value: 'main_gate' as const, label: 'Main Security', icon: Shield },
   ];

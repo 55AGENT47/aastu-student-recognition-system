@@ -9,6 +9,7 @@ import CafeteriaLogs from './CafeteriaLogs';
 import AccessPoints from './AccessPoints';
 import ManageUsers from './ManageUsers';
 import MealScheduleConfig from './MealScheduleConfig';
+import DuplicateAlert from './DuplicateAlert';
 
 import AastuLogo from './AastuLogo';
 
@@ -54,6 +55,7 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
+      <DuplicateAlert />
       <div className="flex flex-1">
         <aside className="w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col">
           <div className="p-6 border-b border-gray-200 dark:border-gray-700">

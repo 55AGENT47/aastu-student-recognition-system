@@ -9,6 +9,8 @@ class Settings(BaseSettings):
     upload_dir: str = "uploads"
     faces_dir: str = "uploads/faces"
     photos_dir: str = "uploads/photos"
+    smtp_email: str = "your-email@gmail.com"
+    smtp_password: str = "your-app-password"
     # Accept either a single string or a list of origins from env
     cors_allow_origins: Union[List[str], str] = ["http://localhost:3000"]
     

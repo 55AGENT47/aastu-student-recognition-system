@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react';
-import { Users, CheckCircle, Activity, TrendingUp, XCircle } from 'lucide-react';
-import { StatsResponse, EventLog } from '../types';
+import { Users, CheckCircle, Activity, TrendingUp, XCircle, UserCheck, Clock } from 'lucide-react';
+import { StatsResponse, EventLog, Student } from '../types';
 import { apiService } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
 export default function Overview() {
+  const { user } = useAuth();
+  const userRole = user?.role as 'admin' | 'cafeteria' | 'student' | 'main_gate' | 'registrar' | undefined;
   const [stats, setStats] = useState<StatsResponse>({
     totalStudents: 0,
     todayAccess: 0,
@@ -13,30 +16,37 @@ export default function Overview() {
     recentTrend: 0,
     recentHistory: [],
   } as any);
+  const [pendingStudents, setPendingStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let mounted = true;
-    const fetchStats = async () => {
+    const fetchData = async () => {
       try {
         const statsData = await apiService.getOverviewStats();
         if (!mounted) return;
         setStats((prev) => ({ ...prev, ...(statsData as any) }));
+        
+        // Fetch pending students if user is registrar
+        if (userRole === 'registrar') {
+          const pending = await apiService.getPendingStudents();
+          if (mounted) setPendingStudents(pending);
+        }
       } catch (error) {
-        console.error('Failed to fetch stats:', error);
+        console.error('Failed to fetch data:', error);
       } finally {
         if (mounted) setLoading(false);
       }
     };
 
-    fetchStats();
+    fetchData();
 
-    const interval = setInterval(fetchStats, 10000); // refresh every 10s
+    const interval = setInterval(fetchData, 10000); // refresh every 10s
     return () => {
       mounted = false;
       clearInterval(interval);
     };
-  }, []);
+  }, [userRole]);
 
   const statCards = [
     {
@@ -125,6 +135,47 @@ export default function Overview() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {userRole === 'registrar' && (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Pending Student Approvals</h3>
+              <span className="px-3 py-1 bg-orange-100 text-orange-700 text-sm font-medium rounded-full">
+                {pendingStudents.length} pending
+              </span>
+            </div>
+            <div className="space-y-3 max-h-64 overflow-y-auto">
+              {pendingStudents.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <UserCheck className="h-12 w-12 mx-auto mb-2 text-gray-300" />
+                  <p className="text-sm">No pending approvals</p>
+                </div>
+              ) : (
+                pendingStudents.slice(0, 5).map((student) => (
+                  <div key={student.StudentID} className="flex items-center space-x-3 p-3 bg-orange-50 rounded-lg">
+                    <div className="h-10 w-10 rounded-full bg-orange-100 flex items-center justify-center">
+                      <Clock className="h-5 w-5 text-orange-600" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 truncate">
+                        {student.FirstName} {student.LastName}
+                      </p>
+                      <p className="text-xs text-gray-500 truncate">{student.Email}</p>
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      {student.Department}
+                    </div>
+                  </div>
+                ))
+              )}
+              {pendingStudents.length > 5 && (
+                <div className="text-center pt-2">
+                  <p className="text-xs text-gray-500">+{pendingStudents.length - 5} more pending</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+        
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h3>
           <div className="space-y-4">

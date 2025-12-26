@@ -111,7 +111,7 @@ export default function StudentRegistration({ onBackToLogin }: StudentRegistrati
 
     try {
       const registrationData = {
-        StudentIdentifier: formData.StudentID,
+        studentIdentifier: formData.StudentID,
         FirstName: formData.FirstName,
         LastName: formData.LastName,
         Email: formData.Email,

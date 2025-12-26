@@ -44,6 +44,7 @@ export default function LiveVerification({ cameraId = 1, isActive = true, ipCame
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [detectionMessage, setDetectionMessage] = useState<string | null>(null);
   const [detectedFaces, setDetectedFaces] = useState<DetectedFace[]>([]);
+  const [isImageUpload, setIsImageUpload] = useState(false);
 
   const [cameraMode, setCameraMode] = useState<'webcam' | 'ip'>('webcam');
   const [ipCameraUrl, setIpCameraUrl] = useState<string>('');
@@ -192,28 +193,30 @@ export default function LiveVerification({ cameraId = 1, isActive = true, ipCame
       const count = detection.faces?.length || 0;
       if (!count) {
         setDetectionMessage('No face detected. Adjust lighting or move closer to the camera.');
-        setDetectedFaces([]);
+        if (!isImageUpload) setDetectedFaces([]);
         return false;
       }
       setDetectionMessage(`Detected ${count} face${count > 1 ? 's' : ''}.`);
-      setDetectedFaces((detection.faces || []).map((face: DetectedFace) => {
-        const isConfident = face.confidence >= 0.55;
-        return {
-          ...face,
-          identified: face.identified && isConfident,
-          color: face.identified && isConfident ? 'green' : 'red',
-          name: face.identified && isConfident ? face.name : 'Unknown'
-        };
-      }));
+      if (!isImageUpload) {
+        setDetectedFaces((detection.faces || []).map((face: DetectedFace) => {
+          const isConfident = face.confidence >= 0.55;
+          return {
+            ...face,
+            identified: face.identified && isConfident,
+            color: face.identified && isConfident ? 'green' : 'red',
+            name: face.identified && isConfident ? face.name : 'Unknown'
+          };
+        }));
+      }
       return true;
     } catch (error) {
       console.error('Face detection failed:', error);
       const message = error instanceof Error ? error.message : 'Unable to detect faces.';
       setDetectionMessage(message);
-      setDetectedFaces([]);
+      if (!isImageUpload) setDetectedFaces([]);
       return false;
     }
-  }, [cameraId]);
+  }, [cameraId, isImageUpload]);
 
   const handleVerify = useCallback(async (imageData: string) => {
     setVerifying(true);
@@ -259,20 +262,22 @@ export default function LiveVerification({ cameraId = 1, isActive = true, ipCame
         first_entry_time: (data as any).first_entry_time,
         meal_period: (data as any).meal_period
       });
-      setDetectedFaces((prev) =>
-        prev.map((face) => {
-          if ((data as any).student && Number(face.student_id) === Number((data as any).student.StudentID)) {
-            const faceConfident = confidence >= 0.55;
-            return { 
-              ...face, 
-              identified: faceConfident, 
-              color: faceConfident ? 'green' : 'red', 
-              name: faceConfident ? (data as any).student.FirstName + ' ' + (data as any).student.LastName : 'Unknown'
-            };
-          }
-          return { ...face, identified: false, color: 'red', name: 'Unknown' };
-        })
-      );
+      if (!isImageUpload) {
+        setDetectedFaces((prev) =>
+          prev.map((face) => {
+            if ((data as any).student && Number(face.student_id) === Number((data as any).student.StudentID)) {
+              const faceConfident = confidence >= 0.55;
+              return { 
+                ...face, 
+                identified: faceConfident, 
+                color: faceConfident ? 'green' : 'red', 
+                name: faceConfident ? (data as any).student.FirstName + ' ' + (data as any).student.LastName : 'Unknown'
+              };
+            }
+            return { ...face, identified: false, color: 'red', name: 'Unknown' };
+          })
+        );
+      }
     } catch (error) {
       console.error('Verification failed:', error);
       const message = error instanceof Error ? error.message : 'Face verification failed.';
@@ -292,6 +297,11 @@ export default function LiveVerification({ cameraId = 1, isActive = true, ipCame
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      // Stop camera when uploading image
+      stopCamera();
+      setIsImageUpload(true);
+      setDetectedFaces([]); // Clear any existing face overlays
+      
       const reader = new FileReader();
       reader.onload = (event) => {
         const imageData = event.target?.result as string;
@@ -304,6 +314,8 @@ export default function LiveVerification({ cameraId = 1, isActive = true, ipCame
   const captureFrame = useCallback(() => {
     console.log('captureFrame called - cameraActive:', cameraActive, 'ipCameraActive:', ipCameraActive, 'verifying:', verifying);
     if ((!cameraActive && !ipCameraActive) || verifying) return;
+    
+    setIsImageUpload(false);
 
     const mediaElement = videoRef.current;
     const canvas = canvasRef.current;
@@ -525,7 +537,7 @@ export default function LiveVerification({ cameraId = 1, isActive = true, ipCame
   };
 
   const renderFaceOverlays = () => {
-    if (!detectedFaces.length || !videoRef.current) return null;
+    if (!detectedFaces.length || !videoRef.current || isImageUpload) return null;
     const dimensions = getMediaDimensions();
     if (!dimensions) return null;
 

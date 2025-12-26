@@ -163,7 +163,7 @@ class FaceRecognitionService:
                             student_id_val = getattr(student, 'StudentID', None)
                             student_dict = {
                                 "StudentID": int(student_id_val) if student_id_val is not None else None,
-                                "StudentIdentifier": getattr(student, 'StudentIdentifier', None),
+                                "studentIdentifier": getattr(student, 'studentIdentifier', None),
                                 "FirstName": getattr(student, 'FirstName', None),
                                 "LastName": getattr(student, 'LastName', None),
                                 "Email": getattr(student, 'Email', None),

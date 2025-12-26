@@ -20,7 +20,7 @@ def read_main_logs(
         models.EventLog,
         models.Student.FirstName,
         models.Student.LastName,
-        models.Student.StudentID.label('StudentIdentifier'),
+        models.Student.studentIdentifier.label('StudentIdentifier'),
         models.Student.PhotoPath,
         models.Camera.Location.label('CameraLocation')
     ).outerjoin(
@@ -96,7 +96,7 @@ def read_cafeteria_logs(
         models.CafeteriaLog,
         models.Student.FirstName,
         models.Student.LastName,
-        models.Student.StudentID.label('StudentIdentifier'),
+        models.Student.studentIdentifier.label('StudentIdentifier'),
         models.Student.PhotoPath,
         models.Camera.Location.label('CameraLocation')
     ).outerjoin(
@@ -127,6 +127,16 @@ def read_cafeteria_logs(
         result.append(schemas.CafeteriaLog(**log_dict))  # type: ignore
     
     return result
+
+@router.get("/duplicate-entries")
+def get_duplicate_entries(db: Session = Depends(get_db)):
+    """Get duplicate cafeteria entries for alerts"""
+    duplicates = db.query(models.CafeteriaLog).filter(
+        models.CafeteriaLog.IsDuplicateAttempt == True,
+        models.CafeteriaLog.AccessTime >= datetime.utcnow() - timedelta(hours=24)
+    ).count()
+    
+    return {"duplicate_count": duplicates, "has_duplicates": duplicates > 0}
 
 @router.get("/students-in-cafeteria", response_model=List[schemas.CafeteriaLog])
 def get_students_in_cafeteria(

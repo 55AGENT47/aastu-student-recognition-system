@@ -72,14 +72,14 @@ export interface Administrator {
 export interface User {
   id: string;
   email: string;
-  role: 'admin' | 'cafeteria' | 'student' | 'main_gate';
+  role: 'admin' | 'cafeteria' | 'student' | 'main_gate' | 'registrar';
   name: string;
 }
 
 export interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
-  login: (email: string, password: string, role?: 'admin' | 'cafeteria' | 'student' | 'main_gate') => Promise<void>;
+  login: (email: string, password: string, role?: 'admin' | 'cafeteria' | 'student' | 'main_gate' | 'registrar') => Promise<void>;
   logout: () => void;
 }
 

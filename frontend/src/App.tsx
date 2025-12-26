@@ -4,6 +4,7 @@ import AuthWrapper from './components/AuthWrapper';
 import CafeteriaSecurityPortal from './components/CafeteriaSecurityPortal';
 import MainGateSecurityPortal from './components/MainGateSecurityPortal';
 import StudentPortal from './components/StudentPortal';
+import RegistrarPortal from './components/RegistrarPortal';
 import Home from './pages/Home';
 import NotFound from './pages/NotFound';
 import { AuthProvider, useAuth } from './context/AuthContext';
@@ -36,6 +37,8 @@ const AppContent: React.FC = () => {
     return <CafeteriaSecurityPortal />;
   } else if (user?.role === 'main_gate') {
     return <MainGateSecurityPortal />;
+  } else if ((user?.role as any) === 'registrar') {
+    return <RegistrarPortal />;
   } else {
     return <Dashboard />;
   }

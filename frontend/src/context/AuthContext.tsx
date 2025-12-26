@@ -17,7 +17,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return null;
   });
 
-  const login = async (username: string, password: string, role: 'admin' | 'cafeteria' | 'student' | 'main_gate' = 'admin') => {
+  const login = async (username: string, password: string, role: 'admin' | 'cafeteria' | 'student' | 'main_gate' | 'registrar' = 'admin') => {
     try {
       const response = await fetch(`${API_BASE}/api/auth/login`, {
         method: 'POST',

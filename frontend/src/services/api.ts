@@ -330,4 +330,31 @@ export const apiService = {
     });
     return handleJsonResponse<{ face_detected: boolean; message: string }>(response, 'Failed to validate face');
   },
+
+  async forgotPassword(email: string) {
+    const response = await fetch(`${API_BASE}/api/auth/forgot-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
+    });
+    if (!response.ok) throw new Error(await response.text());
+    return response.json();
+  },
+
+  async verifyOTP(email: string, otp_code: string, new_password: string) {
+    const response = await fetch(`${API_BASE}/api/auth/verify-otp`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, otp_code, new_password })
+    });
+    if (!response.ok) throw new Error(await response.text());
+    return response.json();
+  },
+
+  async getPendingStudents(): Promise<Student[]> {
+    const response = await fetch(`${API_BASE}/api/auth/pending-students`, {
+      headers: getAuthHeaders()
+    });
+    return handleJsonResponse<Student[]>(response, 'Failed to fetch pending students');
+  }
 };

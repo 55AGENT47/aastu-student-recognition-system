@@ -7,7 +7,7 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 from ..config import settings
 from ..database import get_db
-from ..models.models import Administrator, CafeteriaSecurity, MainGateSecurity, Student
+from ..models.models import Administrator, CafeteriaSecurity, MainGateSecurity, Student, RegistrarOfficer
 from ..models.schemas import TokenData, User
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto", bcrypt__rounds=12)
@@ -117,6 +117,15 @@ def get_user_by_username_and_role(db: Session, username: str, role: str):
                 role="main_gate",
                 name=str(user_db.FullName) if user_db.FullName is not None else username
             )
+    elif role == "registrar":
+        user_db = db.query(RegistrarOfficer).filter(RegistrarOfficer.Username == username, RegistrarOfficer.IsActive == True).first()
+        if user_db:
+            return User(
+                id=str(user_db.OfficerID),
+                email=username,
+                role="registrar",
+                name=str(user_db.FullName) if user_db.FullName is not None else username
+            )
     elif role == "student":
         user_db = db.query(Student).filter(Student.Email == username, Student.IsActive == True).first()
         if user_db:
@@ -157,6 +166,16 @@ def authenticate_user(db: Session, username: str, password: str, role: str):
             id=str(user.SecurityID),
             email=username,
             role="main_gate",
+            name=str(user.FullName) if user.FullName is not None else username
+        )
+    elif role == "registrar":
+        user = db.query(RegistrarOfficer).filter(RegistrarOfficer.Username == username, RegistrarOfficer.IsActive == True).first()
+        if not user or not verify_password(password, user.PasswordHash):
+            return False
+        return User(
+            id=str(user.OfficerID),
+            email=username,
+            role="registrar",
             name=str(user.FullName) if user.FullName is not None else username
         )
     elif role == "student":
