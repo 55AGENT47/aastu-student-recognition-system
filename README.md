@@ -135,11 +135,7 @@ Frontend will run on `http://localhost:5173`
 2. Login with admin credentials
 3. Navigate to Students section
 4. Add students with photos
-<<<<<<< HEAD
 5. Configure meal schedules (Administrator and Cafeteria Security)
-=======
-5. Configure meal schedules (Admin only and Securities)
->>>>>>> 3e3cd3dac638eca7afada9967593dd0f1a1715c3
 6. Configure cameras
 
 ### Adding Students
