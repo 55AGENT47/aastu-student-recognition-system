@@ -138,10 +138,11 @@ class FaceRegistrationResponse(BaseModel):
 
 class VerificationResult(BaseModel):
     success: bool
-    student: Optional[Student] = None
+    student: Optional[dict] = None
     confidence: float
     timestamp: str
     access_granted: bool
+    message: Optional[str] = None
 
 class FaceDetectionResult(BaseModel):
     faces: List[dict]

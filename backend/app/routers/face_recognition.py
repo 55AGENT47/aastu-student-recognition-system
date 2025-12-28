@@ -46,14 +46,16 @@ async def register_face(
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@router.post("/verify", response_model=schemas.VerificationResult)
+@router.post("/verify")
 async def verify_face(
     request: FaceRequest,
     db: Session = Depends(get_db)
 ):
     """Verify face against known faces"""
     try:
+        print(f"Verify request received - camera_id: {request.camera_id}")
         result = face_service.verify_face(db, request.image_data)
+        print(f"Verify result: success={result.get('success')}, confidence={result.get('confidence')}")
         result["timestamp"] = datetime.now().isoformat()
         camera = db.query(models.Camera).filter(models.Camera.CameraID == request.camera_id).first()
         if camera is None:
@@ -68,6 +70,11 @@ async def verify_face(
         success = result.get("success", False)
         decision_status = bool(success)
         
+        # Get the actual student record for logging
+        student_record = None
+        if student_id:
+            student_record = db.query(models.Student).filter(models.Student.StudentID == student_id).first()
+        
         # Determine portal type based on camera ID
         if request.camera_id == 2:
             # Cafeteria portal - log to CafeteriaLogs
@@ -77,7 +84,7 @@ async def verify_face(
                 notes += " - Access denied: No cafeteria access"
             
             cafeteria_log = models.CafeteriaLog(
-                StudentID=student_id,
+                StudentID=student_record.id if student_record else None,
                 CameraID=request.camera_id,
                 MatchScore=confidence,
                 Decision=decision_status,
@@ -89,7 +96,7 @@ async def verify_face(
         else:
             # Main gate portal - log to EventLogs
             event_log = models.EventLog(
-                StudentID=student_id,
+                StudentID=student_record.id if student_record else None,
                 CameraID=request.camera_id,
                 MatchScore=confidence,
                 Decision=decision_status,
@@ -107,9 +114,10 @@ async def verify_face(
                 result["access_granted"] = False
                 result['message'] = result.get('message', '') + ' | Access denied: no cafeteria access on registration.'
 
-        return schemas.VerificationResult(**result)
+        return result
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        print(f"Verification error: {e}")
+        return {"success": False, "student": None, "confidence": 0.0, "timestamp": datetime.now().isoformat(), "access_granted": False, "message": str(e)}
 
 @router.post("/detect", response_model=schemas.FaceDetectionResult)
 async def detect_faces(

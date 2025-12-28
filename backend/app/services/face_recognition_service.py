@@ -13,7 +13,7 @@ class FaceRecognitionService:
         self.known_encodings = []
         self.known_names = []
         self.known_student_ids = []
-        self.tolerance = 0.6
+        self.tolerance = 0.5
         self._initialized = False
         
     def load_known_faces_from_db(self, db: Session):
@@ -156,16 +156,16 @@ class FaceRecognitionService:
                 self._initialized = True
             
             if not self.known_encodings:
-                return {"success": False, "confidence": 0.0, "timestamp": "", "access_granted": False, "message": "No known faces in database"}
+                return {"success": False, "confidence": 0.0, "student": None, "timestamp": "", "access_granted": False, "message": "No known faces in database"}
             
             image = self.base64_to_image(base64_image)
             face_locations = face_recognition.face_locations(image)
             if not face_locations:
-                return {"success": False, "confidence": 0.0, "timestamp": "", "access_granted": False, "message": "No face detected in image"}
+                return {"success": False, "confidence": 0.0, "student": None, "timestamp": "", "access_granted": False, "message": "No face detected in image"}
             
             face_encodings = face_recognition.face_encodings(image, face_locations)
             if not face_encodings:
-                return {"success": False, "confidence": 0.0, "timestamp": "", "access_granted": False, "message": "Could not process face"}
+                return {"success": False, "confidence": 0.0, "student": None, "timestamp": "", "access_granted": False, "message": "Could not process face"}
             
             for face_encoding in face_encodings:
                 matches = face_recognition.compare_faces(self.known_encodings, face_encoding, tolerance=self.tolerance)
@@ -202,11 +202,11 @@ class FaceRecognitionService:
                             "access_granted": True
                         }
             
-            return {"success": False, "confidence": 0.0, "timestamp": "", "access_granted": False, "message": "Face not recognized"}
+            return {"success": False, "confidence": 0.0, "student": None, "timestamp": "", "access_granted": False, "message": "Face not recognized"}
             
         except Exception as e:
             print(f"Error verifying face: {e}")
-            return {"success": False, "confidence": 0.0, "timestamp": "", "access_granted": False, "message": f"Error processing image: {str(e)}"}
+            return {"success": False, "confidence": 0.0, "student": None, "timestamp": "", "access_granted": False, "message": f"Error processing image: {str(e)}"}
     
     def detect_faces(self, db: Session, base64_image: str) -> Dict:
         """Detect and identify faces in image"""

@@ -187,28 +187,7 @@ export default function LiveVerification({ cameraId = 1, isActive = true, ipCame
     }
   }, [cameraMode, startIpCamera, startWebcam]);
 
-  const detectFaces = useCallback(async (imageData: string) => {
-    try {
-      const detection = await apiService.detectFaces(imageData);
-      const count = detection.faces?.length || 0;
-      if (!count) {
-        setDetectionMessage('No face detected. Adjust lighting or move closer to the camera.');
-        if (!isImageUpload) setDetectedFaces([]);
-        return false;
-      }
-      setDetectionMessage(`Detected ${count} face${count > 1 ? 's' : ''}.`);
-      if (!isImageUpload) {
-        setDetectedFaces(detection.faces || []);
-      }
-      return true;
-    } catch (error) {
-      console.error('Face detection failed:', error);
-      const message = error instanceof Error ? error.message : 'Unable to detect faces.';
-      setDetectionMessage(message);
-      if (!isImageUpload) setDetectedFaces([]);
-      return false;
-    }
-  }, [cameraId, isImageUpload]);
+
 
   const handleVerify = useCallback(async (imageData: string) => {
     setVerifying(true);
@@ -216,8 +195,13 @@ export default function LiveVerification({ cameraId = 1, isActive = true, ipCame
     setDetectionMessage(null);
 
     try {
-      const hasFace = await detectFaces(imageData);
-      if (!hasFace) {
+      const detection = await apiService.detectFaces(imageData);
+      const faces = detection.faces || [];
+      const count = faces.length;
+      
+      if (!count) {
+        setDetectionMessage('No face detected. Adjust lighting or move closer to the camera.');
+        if (!isImageUpload) setDetectedFaces([]);
         setResult({
           success: false,
           error: 'Unable to detect a face. Please ensure your face is clearly visible.',
@@ -228,6 +212,9 @@ export default function LiveVerification({ cameraId = 1, isActive = true, ipCame
         });
         return;
       }
+      
+      setDetectionMessage(`Detected ${count} face${count > 1 ? 's' : ''}.`);
+      if (!isImageUpload) setDetectedFaces(faces);
 
       const data = await apiService.verifyFace(imageData, cameraId);
       const confidence = (data as any).confidence || 0;
@@ -245,6 +232,7 @@ export default function LiveVerification({ cameraId = 1, isActive = true, ipCame
       
       setResult({
         ...data,
+        success: data.success && isConfident,
         student: isConfident ? ((data as any).student ?? null) : null,
         confidence: confidence,
         access_granted: isConfident && ((data as any).access_granted || false),
@@ -269,7 +257,7 @@ export default function LiveVerification({ cameraId = 1, isActive = true, ipCame
     } finally {
       setVerifying(false);
     }
-  }, [detectFaces, cameraId]);
+  }, [cameraId, isImageUpload]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
