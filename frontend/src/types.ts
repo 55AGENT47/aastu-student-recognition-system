@@ -14,7 +14,7 @@ export interface AuthContextType {
 }
 
 export interface Student {
-  StudentID: number;
+  StudentID: string;
   StudentIdentifier: string;
   FirstName: string;
   LastName: string;
@@ -40,7 +40,7 @@ export interface Camera {
 
 export interface EventLog {
   LogID: number;
-  StudentID: number | null;
+  StudentID: string | null;
   FirstName?: string;
   LastName?: string;
   CameraID: number;
@@ -53,7 +53,7 @@ export interface EventLog {
 
 export interface CafeteriaLog {
   LogID: number;
-  StudentID: number | null;
+  StudentID: string | null;
   FirstName?: string;
   LastName?: string;
   CameraID: number | null;
@@ -80,7 +80,7 @@ export interface StatsResponse {
 
 export interface VerificationResult {
   success: boolean;
-  studentId?: number;
+  studentId?: string;
   firstName?: string;
   lastName?: string;
   matchScore?: number;

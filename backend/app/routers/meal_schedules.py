@@ -28,7 +28,18 @@ class MealScheduleResponse(BaseModel):
 @router.get("", response_model=List[MealScheduleResponse])
 def get_meal_schedules(db: Session = Depends(get_db)):
     schedules = db.query(MealSchedule).filter(MealSchedule.IsActive == True).all()
-    return schedules
+    result = []
+    for s in schedules:
+        start = str(s.StartTime) if isinstance(s.StartTime, str) else str(s.StartTime).split()[-1] if s.StartTime else "00:00:00"
+        end = str(s.EndTime) if isinstance(s.EndTime, str) else str(s.EndTime).split()[-1] if s.EndTime else "00:00:00"
+        result.append(MealScheduleResponse(
+            ScheduleID=s.ScheduleID,
+            MealName=s.MealName,
+            StartTime=start,
+            EndTime=end,
+            IsActive=s.IsActive
+        ))
+    return result
 
 @router.post("", response_model=MealScheduleResponse)
 def create_or_update_meal_schedule(schedule: MealScheduleCreate, db: Session = Depends(get_db), current_user = Depends(get_current_user)):
@@ -41,13 +52,29 @@ def create_or_update_meal_schedule(schedule: MealScheduleCreate, db: Session = D
         setattr(existing, 'UpdatedAt', datetime.now())
         db.commit()
         db.refresh(existing)
-        return existing
+        start = str(existing.StartTime) if isinstance(existing.StartTime, str) else str(existing.StartTime).split()[-1] if existing.StartTime else "00:00:00"
+        end = str(existing.EndTime) if isinstance(existing.EndTime, str) else str(existing.EndTime).split()[-1] if existing.EndTime else "00:00:00"
+        return MealScheduleResponse(
+            ScheduleID=existing.ScheduleID,
+            MealName=existing.MealName,
+            StartTime=start,
+            EndTime=end,
+            IsActive=existing.IsActive
+        )
     
     new_schedule = MealSchedule(**schedule.dict())
     db.add(new_schedule)
     db.commit()
     db.refresh(new_schedule)
-    return new_schedule
+    start = str(new_schedule.StartTime) if isinstance(new_schedule.StartTime, str) else str(new_schedule.StartTime).split()[-1] if new_schedule.StartTime else "00:00:00"
+    end = str(new_schedule.EndTime) if isinstance(new_schedule.EndTime, str) else str(new_schedule.EndTime).split()[-1] if new_schedule.EndTime else "00:00:00"
+    return MealScheduleResponse(
+        ScheduleID=new_schedule.ScheduleID,
+        MealName=new_schedule.MealName,
+        StartTime=start,
+        EndTime=end,
+        IsActive=new_schedule.IsActive
+    )
 
 @router.post("/reset-daily-entries")
 def reset_daily_entries(db: Session = Depends(get_db), current_user = Depends(get_current_user)):

@@ -52,9 +52,9 @@ def create_student(
     
     return db_student
 
-@router.get("/{student_id}", response_model=schemas.Student)
+@router.get("/{student_id:path}", response_model=schemas.Student)
 def read_student(
-    student_id: int,
+    student_id: str,
     db: Session = Depends(get_db),
     current_user: schemas.User = Depends(get_current_user)
 ) -> models.Student:
@@ -63,9 +63,9 @@ def read_student(
         raise HTTPException(status_code=404, detail="Student not found")
     return db_student
 
-@router.put("/{student_id}", response_model=schemas.Student)
+@router.put("/{student_id:path}", response_model=schemas.Student)
 def update_student(
-    student_id: int, 
+    student_id: str, 
     student: schemas.StudentUpdate,
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db), 
@@ -99,8 +99,8 @@ def update_student(
     
     if photo_removed:
         try:
-            db.query(models.FacialProfile).filter(models.FacialProfile.StudentID == student_id).delete(synchronize_session=False)
-            db.query(models.KnownFace).filter(models.KnownFace.student_id == student_id).delete(synchronize_session=False)
+            db.query(models.FacialProfile).filter(models.FacialProfile.StudentID == db_student.id).delete(synchronize_session=False)
+            db.query(models.KnownFace).filter(models.KnownFace.student_id == db_student.id).delete(synchronize_session=False)
             db.commit()
         except Exception as e:
             print(f"Error deleting face data for student {db_student.StudentID}: {e}")
@@ -108,8 +108,8 @@ def update_student(
     elif photo_changed:
         try:
             # Delete old face data first
-            db.query(models.FacialProfile).filter(models.FacialProfile.StudentID == student_id).delete(synchronize_session=False)
-            db.query(models.KnownFace).filter(models.KnownFace.student_id == student_id).delete(synchronize_session=False)
+            db.query(models.FacialProfile).filter(models.FacialProfile.StudentID == db_student.id).delete(synchronize_session=False)
+            db.query(models.KnownFace).filter(models.KnownFace.student_id == db_student.id).delete(synchronize_session=False)
             db.commit()
             
             def _bg_register_and_reload(student_id, name, b64_image):
@@ -123,7 +123,7 @@ def update_student(
                 finally:
                     db_sess.close()
 
-            background_tasks.add_task(_bg_register_and_reload, db_student.StudentID, f"{db_student.FirstName} {db_student.LastName}", new_photo)
+            background_tasks.add_task(_bg_register_and_reload, db_student.id, f"{db_student.FirstName} {db_student.LastName}", new_photo)
         except Exception as e:
             print(f"Error scheduling face registration for student {db_student.StudentID}: {e}")
 
@@ -135,9 +135,9 @@ def update_student(
     
     return db_student
 
-@router.delete("/{student_id}")
+@router.delete("/{student_id:path}")
 def delete_student(
-    student_id: int, 
+    student_id: str, 
     db: Session = Depends(get_db), 
     current_user: schemas.User = Depends(get_current_user)
 ):
@@ -146,8 +146,8 @@ def delete_student(
         raise HTTPException(status_code=404, detail="Student not found")
     try:
         # Delete related facial profiles and known faces first
-        db.query(models.FacialProfile).filter(models.FacialProfile.StudentID == student_id).delete(synchronize_session=False)
-        db.query(models.KnownFace).filter(models.KnownFace.student_id == student_id).delete(synchronize_session=False)
+        db.query(models.FacialProfile).filter(models.FacialProfile.StudentID == db_student.id).delete(synchronize_session=False)
+        db.query(models.KnownFace).filter(models.KnownFace.student_id == db_student.id).delete(synchronize_session=False)
 
         # Finally delete the student record
         db.delete(db_student)

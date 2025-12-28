@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { useOptimizedImage } from '../hooks/useOptimizedImage';
 
 interface FastImageProps {
@@ -8,6 +8,7 @@ interface FastImageProps {
   alt?: string;
   fallbackIcon?: React.ReactNode;
   priority?: boolean;
+  onImageError?: () => void;
 }
 
 export const FastImage: React.FC<FastImageProps> = ({
@@ -16,28 +17,55 @@ export const FastImage: React.FC<FastImageProps> = ({
   className = '',
   alt = 'Student photo',
   fallbackIcon,
-  priority = false
+  priority = false,
+  onImageError
 }) => {
   const { src, loading } = useOptimizedImage(studentId, { size });
   const imgRef = useRef<HTMLImageElement>(null);
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [hasError, setHasError] = useState(false);
+
+  // Reset states when src changes
+  useEffect(() => {
+    if (src) {
+      setImageLoaded(false);
+      setHasError(false);
+    }
+  }, [src]);
 
   // Preload image if priority is true
-  if (priority && src) {
-    const img = new Image();
-    img.src = src;
-  }
+  useEffect(() => {
+    if (priority && src && !loading) {
+      const img = new Image();
+      img.src = src;
+      img.onload = () => setImageLoaded(true);
+      img.onerror = () => {
+        setHasError(true);
+        onImageError?.();
+      };
+    }
+  }, [priority, src, loading, onImageError]);
+
+  // Container always has the same structure
+  const renderContainer = (content: React.ReactNode, showLoading = false) => (
+    <div className={`relative ${className} overflow-hidden`}>
+      {showLoading && !imageLoaded && !hasError && (
+        <div className="absolute inset-0 bg-gradient-to-br from-gray-100 to-gray-200 animate-pulse z-10" />
+      )}
+      {content}
+    </div>
+  );
 
   if (loading) {
-    return (
-      <div className={`relative ${className}`}>
-        <div className="absolute inset-0 bg-gradient-to-br from-gray-100 to-gray-200 animate-pulse rounded" />
-      </div>
+    return renderContainer(
+      <div className="w-full h-full" />,
+      true
     );
   }
 
-  if (!src) {
-    return (
-      <div className={`bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center rounded ${className}`}>
+  if (!src || hasError) {
+    return renderContainer(
+      <div className="w-full h-full bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center">
         {fallbackIcon || (
           <svg 
             className="h-6 w-6 text-blue-600" 
@@ -57,14 +85,20 @@ export const FastImage: React.FC<FastImageProps> = ({
     );
   }
 
-  return (
+  return renderContainer(
     <img
       ref={imgRef}
       src={src}
       alt={alt}
-      className={`object-cover ${className}`}
+      className={`w-full h-full object-cover ${!imageLoaded ? 'opacity-0' : 'opacity-100 transition-opacity duration-300'}`}
       loading={priority ? 'eager' : 'lazy'}
       decoding="async"
-    />
+      onLoad={() => setImageLoaded(true)}
+      onError={() => {
+        setHasError(true);
+        onImageError?.();
+      }}
+    />,
+    true
   );
 };

@@ -75,7 +75,7 @@ export default function StudentManagement({ viewOnly = false }: StudentManagemen
       
       // Handle image update for new student
       if (student.StudentID) {
-        studentImageService.handleImageUpdate(student.StudentID);
+        studentImageService.handleImageUpdate(Number(student.StudentID));
       }
       
       if (newStudent.PhotoPath) {
@@ -195,12 +195,17 @@ export default function StudentManagement({ viewOnly = false }: StudentManagemen
 
   const captureImage = async () => {
     if (videoRef.current && canvasRef.current) {
+      const video = videoRef.current;
       const canvas = canvasRef.current;
       const ctx = canvas.getContext('2d');
-      if (ctx) {
-        canvas.width = videoRef.current.videoWidth;
-        canvas.height = videoRef.current.videoHeight;
-        ctx.drawImage(videoRef.current, 0, 0);
+      // Wait for video to be ready
+      if (ctx && video.readyState === 4 && video.videoWidth > 0 && video.videoHeight > 0) {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear canvas before drawing
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height); // Fill with white to avoid gray/transparent
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
         const imageData = canvas.toDataURL('image/jpeg', 0.95);
         
         setValidatingFace(true);
@@ -252,7 +257,7 @@ export default function StudentManagement({ viewOnly = false }: StudentManagemen
   const filteredStudents = students.filter(
     (student) =>
       `${student.FirstName} ${student.LastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      student.StudentIdentifier.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      student.StudentID.toLowerCase().includes(searchTerm.toLowerCase()) ||
       student.Email.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -435,8 +440,7 @@ export default function StudentManagement({ viewOnly = false }: StudentManagemen
                   autoPlay 
                   playsInline 
                   muted
-                  className="w-full rounded-lg" 
-                  style={{ maxHeight: '400px', display: 'block' }}
+                  className="w-full aspect-video rounded-lg"
                 ></video>
                 <canvas ref={canvasRef} className="hidden"></canvas>
                 
@@ -548,9 +552,9 @@ export default function StudentManagement({ viewOnly = false }: StudentManagemen
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
                       <OptimizedStudentImage
-                        studentId={typeof student.StudentID === 'number' ? student.StudentID : null}
+                        studentId={student.StudentID}
                         size="thumbnail"
-                        className="h-10 w-10 rounded-full"
+                        className="h-10 w-10 rounded-full flex-shrink-0 object-cover"
                         alt={`${student.FirstName} ${student.LastName}`}
                         fallbackIcon={<UserCircle className="h-6 w-6 text-blue-600" />}
                       />
@@ -561,7 +565,7 @@ export default function StudentManagement({ viewOnly = false }: StudentManagemen
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{student.StudentIdentifier}</div>
+                    <div className="text-sm text-gray-900">{student.StudentID}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900">{(student as any).Department || 'N/A'}</div>

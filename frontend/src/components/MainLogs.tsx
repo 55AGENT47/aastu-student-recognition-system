@@ -101,11 +101,11 @@ export default function MainLogs() {
     }
   };
 
-  const getStudentInfo = (studentId: number | null): { name: string; identifier: string } => {
+  const getStudentInfo = (studentId: string | null): { name: string; identifier: string } => {
     if (!studentId) return { name: 'Unknown', identifier: 'N/A' };
     const student = students.find(s => s.StudentID === studentId);
     return student 
-      ? { name: `${student.FirstName} ${student.LastName}`, identifier: student.StudentIdentifier }
+      ? { name: `${student.FirstName} ${student.LastName}`, identifier: student.StudentID }
       : { name: 'Unknown', identifier: 'N/A' };
   };
 

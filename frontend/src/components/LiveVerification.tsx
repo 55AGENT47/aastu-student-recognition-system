@@ -198,15 +198,7 @@ export default function LiveVerification({ cameraId = 1, isActive = true, ipCame
       }
       setDetectionMessage(`Detected ${count} face${count > 1 ? 's' : ''}.`);
       if (!isImageUpload) {
-        setDetectedFaces((detection.faces || []).map((face: DetectedFace) => {
-          const isConfident = face.confidence >= 0.55;
-          return {
-            ...face,
-            identified: face.identified && isConfident,
-            color: face.identified && isConfident ? 'green' : 'red',
-            name: face.identified && isConfident ? face.name : 'Unknown'
-          };
-        }));
+        setDetectedFaces(detection.faces || []);
       }
       return true;
     } catch (error) {
@@ -262,22 +254,7 @@ export default function LiveVerification({ cameraId = 1, isActive = true, ipCame
         first_entry_time: (data as any).first_entry_time,
         meal_period: (data as any).meal_period
       });
-      if (!isImageUpload) {
-        setDetectedFaces((prev) =>
-          prev.map((face) => {
-            if ((data as any).student && Number(face.student_id) === Number((data as any).student.StudentID)) {
-              const faceConfident = confidence >= 0.55;
-              return { 
-                ...face, 
-                identified: faceConfident, 
-                color: faceConfident ? 'green' : 'red', 
-                name: faceConfident ? (data as any).student.FirstName + ' ' + (data as any).student.LastName : 'Unknown'
-              };
-            }
-            return { ...face, identified: false, color: 'red', name: 'Unknown' };
-          })
-        );
-      }
+
     } catch (error) {
       console.error('Verification failed:', error);
       const message = error instanceof Error ? error.message : 'Face verification failed.';

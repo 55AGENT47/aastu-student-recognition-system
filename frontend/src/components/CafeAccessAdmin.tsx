@@ -27,7 +27,7 @@ export default function CafeAccessAdmin() {
     }
   };
 
-  const toggleSelect = (id: number) => {
+  const toggleSelect = (id: string) => {
     setSelected((prev) => ({ ...prev, [String(id)]: !prev[String(id)] }));
   };
 
@@ -44,7 +44,7 @@ export default function CafeAccessAdmin() {
   };
 
   const bulkUpdate = async (enable: boolean) => {
-    const ids = Object.entries(selected).filter(([, v]) => v).map(([k]) => Number(k) as number);
+    const ids = Object.entries(selected).filter(([, v]) => v).map(([k]) => k);
     if (ids.length === 0) {
       alert('No students selected');
       return;
@@ -55,10 +55,10 @@ export default function CafeAccessAdmin() {
     }
 
     setProcessing(true);
-    const results: { id: number; ok: boolean; error?: any }[] = [];
+    const results: { id: string; ok: boolean; error?: any }[] = [];
     for (const id of ids) {
       try {
-        const s = students.find((x) => Number(x.StudentID) === Number(id));
+        const s = students.find((x) => x.StudentID === id);
         if (!s) continue;
         const payload = {
           FirstName: s.FirstName,
@@ -68,7 +68,7 @@ export default function CafeAccessAdmin() {
           PhotoPath: (s as any).PhotoPath,
           CafeAccess: enable
         };
-        await apiService.updateStudent(id as number, payload);
+        await apiService.updateStudent(id, payload);
         results.push({ id, ok: true });
       } catch (err) {
         console.error('Failed to update student', id, err);
@@ -127,7 +127,7 @@ export default function CafeAccessAdmin() {
                     <input type="checkbox" checked={!!selected[String(s.StudentID)]} onChange={() => toggleSelect(s.StudentID)} />
                   </td>
                   <td className="px-6 py-3">{s.FirstName} {s.LastName}</td>
-                  <td className="px-6 py-3">{s.StudentIdentifier}</td>
+                  <td className="px-6 py-3">{s.StudentID}</td>
                   <td className="px-6 py-3">{s.Email}</td>
                   <td className="px-6 py-3">
                     <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${(s as any).CafeAccess ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'}`}>

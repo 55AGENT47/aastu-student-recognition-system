@@ -31,7 +31,7 @@ def optimize_image(
 
             if max_size:
                 img.thumbnail(max_size, Image.Resampling.LANCZOS)
-
+            
             output = io.BytesIO()
             if format.upper() == 'WEBP':
                 img.save(output, format='WebP', quality=quality, optimize=True, method=6)
@@ -40,20 +40,20 @@ def optimize_image(
             return output.getvalue()
     except Exception as e:
         print(f"Image optimization error: {e}")
-        if image_data.startswith('data:image'):
-            image_data = image_data.split(',')[1]
-        return base64.b64decode(image_data)
+        # Instead of returning raw bytes, raise an error so the route can handle it
+        raise ValueError("Invalid or corrupted image data")
 
-@router.get("/student/{student_id}")
+@router.get("/student/{student_id:path}")
 async def get_student_image(
-    student_id: int,
+    student_id: str,
     request: Request,
     size: str = "medium",  
     format: str = "jpeg",
-    no_cache: bool = False,
+    no_cache: str = "false",
     db: Session = Depends(get_db)
 ):
     """Get optimized student profile image with WebP support"""
+    no_cache_bool = no_cache.lower() in ('true', '1', 'yes')
     student = db.query(models.Student).filter(models.Student.StudentID == student_id).first()
     
     if not student or student.PhotoPath is None or not student.PhotoPath.strip():
@@ -75,7 +75,7 @@ async def get_student_image(
         # Include timestamp or hash of full PhotoPath to ensure cache busting on updates
         photo_hash = hashlib.md5(str(student.PhotoPath).encode()).hexdigest()
         etag = hashlib.md5(f"{student_id}_{size}_{format}_{photo_hash}".encode()).hexdigest()
-        if not no_cache:
+        if not no_cache_bool:
             if_none_match = request.headers.get('if-none-match')
             if if_none_match and if_none_match.strip('"') == etag:
                 return Response(status_code=304)  
@@ -83,7 +83,7 @@ async def get_student_image(
             content=optimized_image,
             media_type=media_type,
             headers={
-                "Cache-Control": "public, max-age=86400, immutable" if not no_cache else "no-cache",  
+                "Cache-Control": "public, max-age=86400, immutable" if not no_cache_bool else "no-cache",  
                 "ETag": f'"{etag}"',
                 "Vary": "Accept",
                 "Last-Modified": time.strftime('%a, %d %b %Y %H:%M:%S GMT', time.gmtime())
@@ -91,9 +91,22 @@ async def get_student_image(
         )
     except Exception as e:
         print(f"Error serving image: {e}")
-        raise HTTPException(status_code=500, detail="Error processing image")
+        # Return a 404 if the image is invalid or corrupted
+        raise HTTPException(status_code=404, detail="Invalid or corrupted image data")
 
-@router.get("/student/{student_id}/thumbnail")
-async def get_student_thumbnail(student_id: int, request: Request, db: Session = Depends(get_db)):
+@router.get("/student/{student_id:path}/thumbnail")
+async def get_student_thumbnail(student_id: str, request: Request, db: Session = Depends(get_db)):
     """Get small thumbnail for lists and tables"""
-    return await get_student_image(student_id, request, "thumbnail", "jpeg", False, db)
+    return await get_student_image(student_id, request, "thumbnail", "jpeg", "false", db)
+
+@router.get("/student/{student_id:path}/base64")
+async def get_student_image_base64(student_id: str, db: Session = Depends(get_db)):
+    """Get student image as base64 data URL"""
+    student = db.query(models.Student).filter(models.Student.StudentID == student_id).first()
+    if not student or not student.PhotoPath:
+        raise HTTPException(status_code=404, detail="Image not found")
+    return Response(
+        content=student.PhotoPath,
+        media_type="text/plain",
+        headers={"Access-Control-Allow-Origin": "*"}
+    )

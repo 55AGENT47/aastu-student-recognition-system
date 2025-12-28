@@ -20,11 +20,11 @@ def read_main_logs(
         models.EventLog,
         models.Student.FirstName,
         models.Student.LastName,
-        models.Student.studentIdentifier.label('StudentIdentifier'),
+        models.Student.StudentID.label('StudentIdentifier'),
         models.Student.PhotoPath,
         models.Camera.Location.label('CameraLocation')
     ).outerjoin(
-        models.Student, models.EventLog.StudentID == models.Student.StudentID
+        models.Student, models.EventLog.StudentID == models.Student.id
     ).join(
         models.Camera, models.EventLog.CameraID == models.Camera.CameraID
     ).filter(
@@ -96,11 +96,11 @@ def read_cafeteria_logs(
         models.CafeteriaLog,
         models.Student.FirstName,
         models.Student.LastName,
-        models.Student.studentIdentifier.label('StudentIdentifier'),
+        models.Student.StudentID.label('StudentIdentifier'),
         models.Student.PhotoPath,
         models.Camera.Location.label('CameraLocation')
     ).outerjoin(
-        models.Student, models.CafeteriaLog.StudentID == models.Student.StudentID
+        models.Student, models.CafeteriaLog.StudentID == models.Student.id
     ).join(
         models.Camera, models.CafeteriaLog.CameraID == models.Camera.CameraID
     ).filter(

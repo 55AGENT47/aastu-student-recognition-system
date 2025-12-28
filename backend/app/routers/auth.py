@@ -52,7 +52,7 @@ async def verify_student(request: VerifyStudentRequest, db: Session = Depends(ge
 async def reset_password(request: ResetPasswordRequest, db: Session = Depends(get_db)):
     student = db.query(Student).filter(
         Student.Email == request.email,
-        Student.StudentIdentifier == request.student_identifier,
+        Student.StudentID == request.student_identifier,
         Student.IsActive == True
     ).first()
     
@@ -63,4 +63,8 @@ async def reset_password(request: ResetPasswordRequest, db: Session = Depends(ge
     db.commit()
     
     return {"message": "Password reset successfully"}
+
+@router.get("/pending-students")
+async def get_pending_students(db: Session = Depends(get_db)):
+    return []
 

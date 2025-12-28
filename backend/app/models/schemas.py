@@ -30,8 +30,7 @@ class StudentUpdate(BaseModel):
     CafeAccess: Optional[bool] = None
 
 class Student(BaseModel):
-    StudentID: int
-    StudentIdentifier: str
+    StudentID: str
     FirstName: str
     LastName: str
     Email: EmailStr
@@ -67,7 +66,7 @@ class Camera(CameraBase):
     }
 
 class EventLogBase(BaseModel):
-    StudentID: Optional[int] = None
+    StudentID: Optional[str] = None
     CameraID: int
     MatchScore: Optional[float] = None
     Decision: Optional[bool] = None
@@ -88,7 +87,7 @@ class EventLog(EventLogBase):
     }
 
 class CafeteriaLogBase(BaseModel):
-    StudentID: Optional[int] = None
+    StudentID: Optional[str] = None
     CameraID: Optional[int] = None
     MatchScore: Optional[float] = None
     Decision: bool
@@ -160,6 +159,29 @@ class KnownFaceResponse(BaseModel):
     name: str
     student_id: Optional[int] = None
     created_at: datetime
+    
+    model_config = {
+        "from_attributes": True
+    }
+
+class NotificationCreate(BaseModel):
+    title: str
+    message: str
+    type: str = 'system'
+    target_role: str
+    student_id: Optional[int] = None
+    log_id: Optional[int] = None
+
+class Notification(BaseModel):
+    id: int
+    title: str
+    message: str
+    type: str
+    target_role: str
+    is_read: bool
+    created_at: datetime
+    student_id: Optional[int] = None
+    log_id: Optional[int] = None
     
     model_config = {
         "from_attributes": True

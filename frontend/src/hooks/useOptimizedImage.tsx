@@ -21,7 +21,7 @@ const supportsWebP = (() => {
   return canvas.toDataURL('image/webp').indexOf('data:image/webp') === 0;
 })();
 
-export const useOptimizedImage = (studentId: number | null, options: UseOptimizedImageOptions = {}): UseOptimizedImageReturn => {
+export const useOptimizedImage = (studentId: number | string | null, options: UseOptimizedImageOptions = {}): UseOptimizedImageReturn => {
   const { size = 'medium', fallback } = options;
   const [src, setSrc] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -87,7 +87,7 @@ export const useOptimizedImage = (studentId: number | null, options: UseOptimize
 };
 
 interface OptimizedStudentImageProps {
-  studentId: number | null;
+  studentId: number | string | null;
   size?: 'thumbnail' | 'medium' | 'full';
   className?: string;
   alt?: string;
@@ -96,12 +96,11 @@ interface OptimizedStudentImageProps {
 
 export const OptimizedStudentImage: React.FC<OptimizedStudentImageProps> = ({ studentId, size = 'medium', className = '', alt = 'Student photo', fallbackIcon }) => {
   const { src, loading, error } = useOptimizedImage(studentId, { size });
-  const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
 
   if (loading) {
     return (
-      <div className={`bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center ${className} animate-pulse`}>
+      <div className={`bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center ${className}`}>
         <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
       </div>
     );
@@ -123,8 +122,8 @@ export const OptimizedStudentImage: React.FC<OptimizedStudentImageProps> = ({ st
     <img
       src={src}
       alt={alt}
-      className={`${className} ${imageLoaded ? '' : 'opacity-0'}`}
-      onLoad={() => setImageLoaded(true)}
+      className={className}
+      onLoad={() => {}}
       onError={() => setImageError(true)}
     />
   );

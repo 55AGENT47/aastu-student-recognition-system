@@ -97,11 +97,32 @@ class FaceRecognitionService:
             if not face_encodings:
                 return {"success": False, "message": "Could not generate face encoding"}
             
-            # Store the base64 image as bytes
+            # Process and re-encode the image as JPEG to remove transparency/gray overlay
+            from PIL import Image
+            import base64
+            from io import BytesIO
             if base64_image.startswith('data:image'):
-                image_data = base64_image.split(',')[1].encode('utf-8')
+                base64_str = base64_image.split(',')[1]
             else:
-                image_data = base64_image.encode('utf-8')
+                base64_str = base64_image
+            try:
+                img_bytes = base64.b64decode(base64_str)
+                pil_image = Image.open(BytesIO(img_bytes))
+                pil_image.load()  # Force loading to catch truncated images
+                if pil_image.mode != 'RGB':
+                    pil_image = pil_image.convert('RGB')
+                buffer = BytesIO()
+                pil_image.save(buffer, format='JPEG', quality=95)
+                buffer.seek(0)
+                jpeg_bytes = buffer.read()
+                # Validate JPEG length (arbitrary minimum size, e.g., 2KB)
+                if len(jpeg_bytes) < 2048:
+                    print(f"Image too small after re-encoding, likely corrupted. Size: {len(jpeg_bytes)} bytes")
+                    raise ValueError("Image data is incomplete or corrupted.")
+                image_data = base64.b64encode(jpeg_bytes)
+            except Exception as e:
+                print(f"Error processing image before saving: {e}")
+                raise ValueError("Invalid or incomplete image data. Please retake or re-upload the photo.")
             
             existing_face = db.query(KnownFace).filter(KnownFace.student_id == student_id).first()
             if existing_face:
@@ -155,15 +176,14 @@ class FaceRecognitionService:
                     if matches[best_match_index]:
                         confidence = 1 - face_distances[best_match_index]
                         student_id = self.known_student_ids[best_match_index]
-                        student = db.query(Student).filter(Student.StudentID == student_id).first()
+                        student = db.query(Student).filter(Student.id == student_id).first()
                         
                         student_dict = None
                         if student:
                             enrollment_date = getattr(student, 'EnrollmentDate', None)
                             student_id_val = getattr(student, 'StudentID', None)
                             student_dict = {
-                                "StudentID": int(student_id_val) if student_id_val is not None else None,
-                                "studentIdentifier": getattr(student, 'studentIdentifier', None),
+                                "StudentID": str(student_id_val) if student_id_val is not None else None,
                                 "FirstName": getattr(student, 'FirstName', None),
                                 "LastName": getattr(student, 'LastName', None),
                                 "Email": getattr(student, 'Email', None),
@@ -213,11 +233,10 @@ class FaceRecognitionService:
                     best_match_index = np.argmin(face_distances)
                     if matches[best_match_index]:
                         confidence = 1 - face_distances[best_match_index]
-                        if confidence > (1 - self.tolerance):
-                            identified = True
-                            student_id = self.known_student_ids[best_match_index]
-                            name = self.known_names[best_match_index]
-                            color = "green"
+                        identified = True
+                        student_id = self.known_student_ids[best_match_index]
+                        name = self.known_names[best_match_index]
+                        color = "green"
                 
                 faces.append({
                     "box": {

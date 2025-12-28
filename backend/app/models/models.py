@@ -5,8 +5,8 @@ from ..database import Base
 
 class Student(Base):
     __tablename__ = "Students"
-    StudentID = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    StudentIdentifier = Column(String(50), nullable=False, unique=True)
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    StudentID = Column(String(50), nullable=False, unique=True, index=True)
     FirstName = Column(String(255), nullable=False)
     LastName = Column(String(255), nullable=False)
     Email = Column(String(255), unique=True, nullable=False, index=True)
@@ -18,10 +18,10 @@ class Student(Base):
     PasswordHash = Column(String(255))
     CafeAccess = Column(Boolean, default=False)
     IsActive = Column(Boolean, default=True)
-    facial_profiles = relationship("FacialProfile", back_populates="student")
-    event_logs = relationship("EventLog", back_populates="student")
-    cafeteria_logs = relationship("CafeteriaLog", back_populates="student")
-    known_faces = relationship("KnownFace", back_populates="student")
+    facial_profiles = relationship("FacialProfile", back_populates="student", foreign_keys="FacialProfile.StudentID")
+    event_logs = relationship("EventLog", back_populates="student", foreign_keys="EventLog.StudentID")
+    cafeteria_logs = relationship("CafeteriaLog", back_populates="student", foreign_keys="CafeteriaLog.StudentID")
+    known_faces = relationship("KnownFace", back_populates="student", foreign_keys="KnownFace.student_id")
 
 class KnownFace(Base):
     __tablename__ = "known_faces"
@@ -36,10 +36,10 @@ class KnownFace(Base):
 class FacialProfile(Base):
     __tablename__ = "FacialProfiles"
     ProfileID = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    StudentID = Column(Integer, ForeignKey("Students.StudentID"), nullable=False)
+    StudentID = Column(Integer, ForeignKey("Students.id"), nullable=False)
     FeatureVector = Column(LargeBinary, nullable=False)
     DateAdded = Column(DateTime, nullable=False, server_default=func.now())
-    student = relationship("Student", back_populates="facial_profiles")
+    student = relationship("Student", back_populates="facial_profiles", foreign_keys=[StudentID])
 
 class Camera(Base):
     __tablename__ = "Cameras"
@@ -81,15 +81,25 @@ class MainGateSecurity(Base):
     IsActive = Column(Boolean, default=True)
     CreatedAt = Column(DateTime, server_default=func.now())
 
+class RegistrarOfficer(Base):
+    __tablename__ = "RegistrarOfficer"
+    OfficerID = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    Username = Column(String(255), unique=True, nullable=False, index=True)
+    PasswordHash = Column(String(255), nullable=False)
+    FullName = Column(String(255))
+    LastLogin = Column(DateTime)
+    IsActive = Column(Boolean, default=True)
+    CreatedAt = Column(DateTime, server_default=func.now())
+
 class EventLog(Base):
     __tablename__ = "EventLogs"
     LogID = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    StudentID = Column(Integer, ForeignKey("Students.StudentID"))
+    StudentID = Column(Integer, ForeignKey("Students.id"))
     CameraID = Column(Integer, ForeignKey("Cameras.CameraID"), nullable=False)
     MatchScore = Column(Float)
     Decision = Column(Boolean)
     EventTime = Column(DateTime, server_default=func.now())
-    student = relationship("Student", back_populates="event_logs")
+    student = relationship("Student", back_populates="event_logs", foreign_keys=[StudentID])
     camera = relationship("Camera", back_populates="event_logs")
 
 class MealSchedule(Base):
@@ -105,7 +115,7 @@ class MealSchedule(Base):
 class CafeteriaLog(Base):
     __tablename__ = "CafeteriaLogs"
     LogID = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    StudentID = Column(Integer, ForeignKey("Students.StudentID"))
+    StudentID = Column(Integer, ForeignKey("Students.id"))
     CameraID = Column(Integer, ForeignKey("Cameras.CameraID"))
     AccessTime = Column(DateTime, nullable=False, server_default=func.now())
     MatchScore = Column(Float)
@@ -115,5 +125,26 @@ class CafeteriaLog(Base):
     IsDuplicateAttempt = Column(Boolean, default=False)
     FirstEntryTime = Column(DateTime)
     Notes = Column(String(255))
-    student = relationship("Student", back_populates="cafeteria_logs")
+    student = relationship("Student", back_populates="cafeteria_logs", foreign_keys=[StudentID])
     camera = relationship("Camera", back_populates="cafeteria_logs")
+
+class PasswordResetOTP(Base):
+    __tablename__ = "PasswordResetOTP"
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    email = Column(String(255), nullable=False, index=True)
+    otp_code = Column(String(6), nullable=False, index=True)
+    created_at = Column(DateTime, server_default=func.now())
+    expires_at = Column(DateTime, nullable=False)
+    is_used = Column(Boolean, default=False)
+
+class Notification(Base):
+    __tablename__ = "Notifications"
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    title = Column(String(255), nullable=False)
+    message = Column(String(1000), nullable=False)
+    type = Column(String(50), default='system')
+    target_role = Column(String(50), nullable=False)
+    is_read = Column(Boolean, default=False)
+    created_at = Column(DateTime, server_default=func.now())
+    student_id = Column(Integer)
+    log_id = Column(Integer)

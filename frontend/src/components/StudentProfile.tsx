@@ -104,7 +104,7 @@ export default function StudentProfile() {
 
       // Handle profile update - clears cache and notifies all components
       if (student.StudentID) {
-        studentImageService.handleProfileUpdate(student.StudentID);
+        studentImageService.handleProfileUpdate(Number(student.StudentID));
       }
 
       if (editForm.PhotoPath && editForm.PhotoPath !== (student as any).PhotoPath) {
@@ -187,12 +187,17 @@ export default function StudentProfile() {
 
   const captureImage = async () => {
     if (videoRef.current && canvasRef.current) {
+      const video = videoRef.current;
       const canvas = canvasRef.current;
       const ctx = canvas.getContext('2d');
-      if (ctx) {
-        canvas.width = videoRef.current.videoWidth;
-        canvas.height = videoRef.current.videoHeight;
-        ctx.drawImage(videoRef.current, 0, 0);
+      // Wait for video to be ready
+      if (ctx && video.readyState === 4 && video.videoWidth > 0 && video.videoHeight > 0) {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear canvas before drawing
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height); // Fill with white to avoid gray/transparent
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
         const imageData = canvas.toDataURL('image/jpeg', 0.95);
 
         
@@ -336,7 +341,7 @@ export default function StudentProfile() {
             <div className="text-center">
               <div className="relative inline-block">
                 {editing && imagePreview ? (
-                  <div className="relative w-32 h-32 mx-auto rounded-full overflow-hidden">
+                  <div className="relative w-32 h-32 mx-auto rounded-full overflow-hidden bg-gray-100">
                     {!imageLoaded && (
                       <div className="absolute inset-0 flex items-center justify-center bg-blue-50">
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -345,7 +350,7 @@ export default function StudentProfile() {
                     <img
                       src={imagePreview}
                       alt="Profile"
-                      className="w-32 h-32 rounded-full object-cover border-4 border-blue-100 mx-auto"
+                      className="w-full h-full rounded-full object-cover border-4 border-blue-100"
                       onLoad={() => setImageLoaded(true)}
                       onError={(e) => {
                         e.currentTarget.style.display = 'none';
@@ -366,9 +371,9 @@ export default function StudentProfile() {
                     aria-label="View profile photo in full quality"
                   >
                     <OptimizedStudentImage
-                      studentId={typeof student?.StudentID === 'number' ? student.StudentID : null}
+                      studentId={student?.StudentID || null}
                       size="full"
-                      className="w-32 h-32 rounded-full border-4 border-blue-100 mx-auto object-cover transition-transform duration-200 hover:scale-105"
+                      className="w-32 h-32 rounded-full border-4 border-blue-100 object-cover"
                       alt="Profile"
                       fallbackIcon={<User className="h-16 w-16 text-blue-600" />}
                     />
@@ -629,8 +634,7 @@ export default function StudentProfile() {
                   autoPlay
                   playsInline
                   muted
-                  className="w-full rounded-lg"
-                  style={{ maxHeight: '400px', display: 'block' }}
+                  className="w-full aspect-video rounded-lg"
                 ></video>
                 <canvas ref={canvasRef} className="hidden"></canvas>
 
