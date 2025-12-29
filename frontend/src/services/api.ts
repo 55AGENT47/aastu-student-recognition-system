@@ -331,6 +331,38 @@ export const apiService = {
     return handleJsonResponse<{ face_detected: boolean; message: string }>(response, 'Failed to validate face');
   },
 
+  async getPendingStudents(): Promise<Student[]> {
+    const response = await fetch(`${API_BASE}/api/registration/pending-students`, {
+      headers: getAuthHeaders(),
+    });
+    return handleJsonResponse<Student[]>(response, 'Failed to fetch pending students');
+  },
+
+  async getNotifications(): Promise<any[]> {
+    const response = await fetch(`${API_BASE}/api/notifications/`, {
+      headers: getAuthHeaders(),
+    });
+    return handleJsonResponse<any[]>(response, 'Failed to fetch notifications');
+  },
+
+  async markNotificationRead(notificationId: number): Promise<void> {
+    const response = await fetch(`${API_BASE}/api/notifications/${notificationId}/mark-read`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+    });
+    if (!response.ok) {
+      throw new Error(await parseErrorMessage(response, 'Failed to mark notification as read'));
+    }
+  },
+
+  async handleNotificationAction(notificationId: number, action: string): Promise<any> {
+    const response = await fetch(`${API_BASE}/api/notifications/${notificationId}/action?action=${action}`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+    });
+    return handleJsonResponse<any>(response, 'Failed to handle notification action');
+  },
+
   async forgotPassword(email: string) {
     const response = await fetch(`${API_BASE}/api/auth/forgot-password`, {
       method: 'POST',
@@ -349,12 +381,5 @@ export const apiService = {
     });
     if (!response.ok) throw new Error(await response.text());
     return response.json();
-  },
-
-  async getPendingStudents(): Promise<Student[]> {
-    const response = await fetch(`${API_BASE}/api/auth/pending-students`, {
-      headers: getAuthHeaders()
-    });
-    return handleJsonResponse<Student[]>(response, 'Failed to fetch pending students');
   }
 };

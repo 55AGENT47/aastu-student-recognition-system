@@ -176,3 +176,19 @@ ADD COLUMN IF NOT EXISTS IsDuplicateAttempt BOOLEAN DEFAULT FALSE,
 ADD COLUMN IF NOT EXISTS FirstEntryTime DATETIME DEFAULT NULL,
 ADD INDEX idx_access_date (AccessTime),
 ADD INDEX idx_meal_period (MealPeriod);
+
+-- Notifications table for system alerts
+CREATE TABLE IF NOT EXISTS Notifications (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    message TEXT NOT NULL,
+    type VARCHAR(50) DEFAULT 'system',
+    target_role VARCHAR(50) NOT NULL,
+    is_read BOOLEAN DEFAULT FALSE,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    student_id INT DEFAULT NULL,
+    log_id INT DEFAULT NULL,
+    INDEX idx_target_role (target_role),
+    INDEX idx_is_read (is_read),
+    INDEX idx_created_at (created_at)
+) ENGINE=InnoDB;

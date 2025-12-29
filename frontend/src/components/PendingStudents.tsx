@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
-import { Check, X, Clock, User } from 'lucide-react';
+import { Check, X, Clock, User, Mail, Calendar, Building2 } from 'lucide-react';
 import { Student } from '../types';
+import { OptimizedStudentImage } from '../hooks/useOptimizedImage.tsx';
+import { apiService } from '../services/api';
 
 export default function PendingStudents() {
   const [pendingStudents, setPendingStudents] = useState<Student[]>([]);
@@ -12,13 +14,7 @@ export default function PendingStudents() {
 
   const fetchPendingStudents = async () => {
     try {
-      const response = await fetch('/api/auth/pending-students', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      const data = await response.json();
+      const data = await apiService.getPendingStudents();
       setPendingStudents(data);
     } catch (error) {
       console.error('Failed to fetch pending students:', error);
@@ -27,9 +23,9 @@ export default function PendingStudents() {
     }
   };
 
-  const handleApproval = async (studentId: number, approved: boolean) => {
+  const handleApproval = async (studentId: string, approved: boolean) => {
     try {
-      await fetch('/api/auth/approve-student', {
+      await fetch('/api/registration/approve-student', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -74,71 +70,90 @@ export default function PendingStudents() {
         </div>
       ) : (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Student
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Department
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Registration Date
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {pendingStudents.map((student) => (
-                  <tr key={student.StudentID} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
-                          <User className="h-6 w-6 text-gray-500" />
-                        </div>
-                        <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">
-                            {student.FirstName} {student.LastName}
-                          </div>
-                          <div className="text-sm text-gray-500">{student.Email}</div>
-                          <div className="text-sm text-gray-500">ID: {student.StudentIdentifier}</div>
-                        </div>
+          <div className="grid gap-6 p-6">
+            {pendingStudents.map((student) => (
+              <div key={student.StudentID} className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">
+                <div className="flex flex-col lg:flex-row gap-6">
+                  {/* Student Photo */}
+                  <div className="flex-shrink-0">
+                    <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-100 border-2 border-gray-200">
+                      <OptimizedStudentImage
+                        studentId={student.StudentID}
+                        size="medium"
+                        className="w-full h-full object-cover"
+                        alt={`${student.FirstName} ${student.LastName}`}
+                        fallbackIcon={<User className="h-12 w-12 text-gray-400" />}
+                      />
+                    </div>
+                  </div>
+                  
+                  {/* Student Information */}
+                  <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-3">
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-900">
+                          {student.FirstName} {student.LastName}
+                        </h3>
+                        <p className="text-sm text-gray-500">ID: {(student as any).StudentIdentifier || student.StudentID}</p>
                       </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{student.Department || 'N/A'}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
-                        {new Date(student.EnrollmentDate).toLocaleDateString()}
+                      
+                      <div className="flex items-center space-x-2 text-sm text-gray-600">
+                        <Mail className="h-4 w-4" />
+                        <span>{student.Email}</span>
                       </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <div className="flex space-x-2 justify-end">
-                        <button
-                          onClick={() => handleApproval(student.StudentID, true)}
-                          className="inline-flex items-center px-3 py-1 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-green-600 hover:bg-green-700"
-                        >
-                          <Check className="h-4 w-4 mr-1" />
-                          Approve
-                        </button>
-                        <button
-                          onClick={() => handleApproval(student.StudentID, false)}
-                          className="inline-flex items-center px-3 py-1 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-red-600 hover:bg-red-700"
-                        >
-                          <X className="h-4 w-4 mr-1" />
-                          Reject
-                        </button>
+                      
+                      <div className="flex items-center space-x-2 text-sm text-gray-600">
+                        <Building2 className="h-4 w-4" />
+                        <span>{(student as any).Department || 'N/A'}</span>
                       </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    </div>
+                    
+                    <div className="space-y-3">
+                      <div className="flex items-center space-x-2 text-sm text-gray-600">
+                        <Calendar className="h-4 w-4" />
+                        <span>Enrolled: {new Date(student.EnrollmentDate).toLocaleDateString()}</span>
+                      </div>
+                      
+                      <div className="flex items-center space-x-2">
+                        <span className="text-sm font-medium text-gray-700">Cafeteria Access:</span>
+                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                          (student as any).CafeAccess 
+                            ? 'bg-green-100 text-green-800' 
+                            : 'bg-gray-100 text-gray-800'
+                        }`}>
+                          {(student as any).CafeAccess ? 'Enabled' : 'Disabled'}
+                        </span>
+                      </div>
+                      
+                      <div className="flex items-center space-x-2">
+                        <span className="text-sm font-medium text-gray-700">Status:</span>
+                        <span className="px-2 py-1 text-xs font-medium rounded-full bg-orange-100 text-orange-800">
+                          Pending Approval
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Action Buttons */}
+                  <div className="flex flex-col space-y-2 lg:w-32">
+                    <button
+                      onClick={() => handleApproval(student.StudentID, true)}
+                      className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 transition-colors"
+                    >
+                      <Check className="h-4 w-4 mr-1" />
+                      Approve
+                    </button>
+                    <button
+                      onClick={() => handleApproval(student.StudentID, false)}
+                      className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 transition-colors"
+                    >
+                      <X className="h-4 w-4 mr-1" />
+                      Reject
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       )}

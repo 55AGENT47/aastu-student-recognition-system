@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Eye, EyeOff, GraduationCap, ArrowLeft, X } from 'lucide-react';
+import { Eye, EyeOff, GraduationCap, ArrowLeft, X, Check } from 'lucide-react';
 import AastuLogo from './AastuLogo';
 import { apiService } from '../services/api';
 
@@ -23,6 +23,7 @@ export default function StudentRegistration({ onBackToLogin }: StudentRegistrati
   });
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [showCaptureModal, setShowCaptureModal] = useState(false);
+  const [photoSource, setPhotoSource] = useState<'upload' | 'capture' | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -74,6 +75,7 @@ export default function StudentRegistration({ onBackToLogin }: StudentRegistrati
       ctx.drawImage(videoRef.current, 0, 0);
       const imageData = canvas.toDataURL('image/jpeg', 0.95);
       setImagePreview(imageData);
+      setPhotoSource('capture');
       setShowCaptureModal(false);
       stopCamera();
       setFormData(prev => ({ ...prev, PhotoPath: imageData } as any));
@@ -87,6 +89,7 @@ export default function StudentRegistration({ onBackToLogin }: StudentRegistrati
     reader.onload = (ev) => {
       const data = ev.target?.result as string;
       setImagePreview(data);
+      setPhotoSource('upload');
       setFormData(prev => ({ ...prev, PhotoPath: data } as any));
     };
     reader.readAsDataURL(file);
@@ -96,6 +99,12 @@ export default function StudentRegistration({ onBackToLogin }: StudentRegistrati
     e.preventDefault();
     setLoading(true);
     setError('');
+
+    if (!formData.PhotoPath) {
+      setError('Photo is required. Please upload or capture a photo.');
+      setLoading(false);
+      return;
+    }
 
     if (formData.Password !== formData.ConfirmPassword) {
       setError('Passwords do not match');
@@ -167,9 +176,10 @@ export default function StudentRegistration({ onBackToLogin }: StudentRegistrati
       }
 
       setSuccess(true);
+      // Don't redirect to login immediately - show pending approval message
       setTimeout(() => {
         onBackToLogin();
-      }, 1200);
+      }, 5000); // Give more time to read the message
 
     } catch (error) {
       if (error instanceof Error) {
@@ -198,8 +208,15 @@ export default function StudentRegistration({ onBackToLogin }: StudentRegistrati
             <div className="text-green-600 mb-4">
               <GraduationCap className="h-16 w-16 mx-auto" />
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Registration Successful!</h2>
-            <p className="text-gray-600 mb-4">Your account has been created successfully.</p>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Registration Submitted!</h2>
+            <p className="text-gray-600 mb-4">Your registration has been submitted successfully.</p>
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+              <p className="text-yellow-800 text-sm font-medium mb-2">⏳ Pending Approval</p>
+              <p className="text-yellow-700 text-sm">
+                Please wait patiently while the Registrar Officer reviews and approves your registration. 
+                You will be able to access your profile once approved.
+              </p>
+            </div>
             <p className="text-sm text-gray-500">Redirecting to login...</p>
           </div>
         </div>
@@ -411,11 +428,16 @@ export default function StudentRegistration({ onBackToLogin }: StudentRegistrati
 
             
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Photo (optional)</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Photo (required)</label>
               <div className="flex items-center space-x-3">
-                <div className="w-24 h-24 bg-gray-100 rounded overflow-hidden flex items-center justify-center">
+                <div className="w-24 h-24 bg-gray-100 rounded overflow-hidden flex items-center justify-center relative">
                   {imagePreview ? (
-                    <img src={imagePreview} alt="preview" className="w-full h-full object-cover" />
+                    <>
+                      <img src={imagePreview} alt="preview" className="w-full h-full object-cover" />
+                      <div className="absolute top-1 right-1 bg-green-500 rounded-full p-1">
+                        <Check className="h-3 w-3 text-white" />
+                      </div>
+                    </>
                   ) : (
                     <div className="text-xs text-gray-500">No image</div>
                   )}
@@ -425,7 +447,15 @@ export default function StudentRegistration({ onBackToLogin }: StudentRegistrati
                     <input type="file" accept="image/*" onChange={handleFileChange} />
                     <button type="button" onClick={() => { setShowCaptureModal(true); setTimeout(startCamera, 150); }} className="px-3 py-1 bg-gray-200 rounded">Capture</button>
                   </div>
-                  <p className="text-xs text-gray-500">Optional: upload or capture a clear face photo for recognition.</p>
+                  <p className="text-xs text-blue-600 font-medium">💡 Tip: Use a high-quality, well-lit photo with your face clearly visible for better recognition accuracy.</p>
+                  {imagePreview && (
+                    <div className="flex items-center space-x-1 text-green-600">
+                      <Check className="h-4 w-4" />
+                      <span className="text-xs font-medium">
+                        Photo {photoSource === 'capture' ? 'captured' : 'uploaded'} successfully!
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

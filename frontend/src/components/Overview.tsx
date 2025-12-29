@@ -48,7 +48,52 @@ export default function Overview() {
     };
   }, [userRole]);
 
-  const statCards = [
+  const statCards = userRole === 'registrar' ? [
+    {
+      title: 'Total Students',
+      value: stats.totalStudents,
+      icon: Users,
+      color: 'blue',
+      trend: '+8.2%',
+    },
+    {
+      title: 'Pending Student Approvals',
+      value: pendingStudents.length,
+      icon: UserCheck,
+      color: 'orange',
+      trend: 'Awaiting review',
+    },
+  ] : userRole === 'cafeteria' ? [
+    {
+      title: 'Total Students',
+      value: stats.totalStudents,
+      icon: Users,
+      color: 'blue',
+      trend: '+8.2%',
+    },
+    {
+      title: "Today's Cafeteria Access",
+      value: (stats as any).todayCafeteriaAccess ?? 0,
+      icon: Activity,
+      color: 'teal',
+      trend: '+0.0%',
+    },
+  ] : userRole === 'main_gate' ? [
+    {
+      title: 'Total Students',
+      value: stats.totalStudents,
+      icon: Users,
+      color: 'blue',
+      trend: '+8.2%',
+    },
+    {
+      title: 'Today\'s Main Gate Access',
+      value: (stats as any).todayAccess,
+      icon: CheckCircle,
+      color: 'green',
+      trend: '+12.5%',
+    },
+  ] : [
     {
       title: 'Total Students',
       value: stats.totalStudents,
@@ -101,7 +146,7 @@ export default function Overview() {
         <p className="mt-2 text-gray-600">Monitor your student recognition system performance</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+      <div className={`grid grid-cols-1 gap-6 ${userRole === 'registrar' ? 'md:grid-cols-2' : userRole === 'cafeteria' || userRole === 'main_gate' ? 'md:grid-cols-2' : 'md:grid-cols-2 lg:grid-cols-5'}`}>
         {statCards.map((stat) => {
           const Icon = stat.icon;
           const colorClasses = {
@@ -135,39 +180,64 @@ export default function Overview() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {userRole === 'registrar' && (
+        {(userRole === 'registrar' || userRole === 'cafeteria' || userRole === 'main_gate') && (
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">Pending Student Approvals</h3>
-              <span className="px-3 py-1 bg-orange-100 text-orange-700 text-sm font-medium rounded-full">
-                {pendingStudents.length} pending
-              </span>
+              <h3 className="text-lg font-semibold text-gray-900">
+                {userRole === 'registrar' ? 'Pending Student Approvals' : 'Recent Activity'}
+              </h3>
+              {userRole === 'registrar' && (
+                <span className="px-3 py-1 bg-orange-100 text-orange-700 text-sm font-medium rounded-full">
+                  {pendingStudents.length} pending
+                </span>
+              )}
             </div>
             <div className="space-y-3 max-h-64 overflow-y-auto">
-              {pendingStudents.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  <UserCheck className="h-12 w-12 mx-auto mb-2 text-gray-300" />
-                  <p className="text-sm">No pending approvals</p>
-                </div>
+              {userRole === 'registrar' ? (
+                pendingStudents.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    <UserCheck className="h-12 w-12 mx-auto mb-2 text-gray-300" />
+                    <p className="text-sm">No pending approvals</p>
+                  </div>
+                ) : (
+                  pendingStudents.slice(0, 5).map((student) => (
+                    <div key={student.StudentID} className="flex items-center space-x-3 p-3 bg-orange-50 rounded-lg">
+                      <div className="h-10 w-10 rounded-full bg-orange-100 flex items-center justify-center">
+                        <Clock className="h-5 w-5 text-orange-600" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900 truncate">
+                          {student.FirstName} {student.LastName}
+                        </p>
+                        <p className="text-xs text-gray-500 truncate">{student.Email}</p>
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {student.Department}
+                      </div>
+                    </div>
+                  ))
+                )
               ) : (
-                pendingStudents.slice(0, 5).map((student) => (
-                  <div key={student.StudentID} className="flex items-center space-x-3 p-3 bg-orange-50 rounded-lg">
-                    <div className="h-10 w-10 rounded-full bg-orange-100 flex items-center justify-center">
-                      <Clock className="h-5 w-5 text-orange-600" />
+                (stats.recentHistory && stats.recentHistory.length > 0 ? stats.recentHistory : []).slice(0, 6).map((item: EventLog, idx: number) => (
+                  <div key={item.LogID ?? idx} className="flex items-center space-x-4 p-3 bg-gray-50 rounded-lg">
+                    <div className={`h-10 w-10 rounded-full flex items-center justify-center ${item.Decision ? 'bg-green-100' : 'bg-red-100'}`}>
+                      {item.Decision ? (
+                        <CheckCircle className="h-5 w-5 text-green-600" />
+                      ) : (
+                        <XCircle className="h-5 w-5 text-red-600" />
+                      )}
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">
-                        {student.FirstName} {student.LastName}
-                      </p>
-                      <p className="text-xs text-gray-500 truncate">{student.Email}</p>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-gray-900">{item.FirstName || item.StudentID ? `${item.FirstName ?? ''} ${item.LastName ?? ''}`.trim() : 'Unknown student'}</p>
+                      <p className="text-xs text-gray-500">{new Date(item.EventTime || (item as any).AccessTime || Date.now()).toLocaleString()}</p>
                     </div>
-                    <div className="text-xs text-gray-500">
-                      {student.Department}
+                    <div className="text-sm font-medium text-gray-700">
+                      {item.Decision ? 'Success' : 'Failed'}
                     </div>
                   </div>
                 ))
               )}
-              {pendingStudents.length > 5 && (
+              {userRole === 'registrar' && pendingStudents.length > 5 && (
                 <div className="text-center pt-2">
                   <p className="text-xs text-gray-500">+{pendingStudents.length - 5} more pending</p>
                 </div>
@@ -176,53 +246,57 @@ export default function Overview() {
           </div>
         )}
         
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h3>
-          <div className="space-y-4">
-            {(stats.recentHistory && stats.recentHistory.length > 0 ? stats.recentHistory : []).slice(0, 6).map((item: EventLog, idx: number) => (
-              <div key={item.LogID ?? idx} className="flex items-center space-x-4 p-3 bg-gray-50 rounded-lg">
-                <div className={`h-10 w-10 rounded-full flex items-center justify-center ${item.Decision ? 'bg-green-100' : 'bg-red-100'}`}>
-                  {item.Decision ? (
-                    <CheckCircle className="h-5 w-5 text-green-600" />
-                  ) : (
-                    <XCircle className="h-5 w-5 text-red-600" />
-                  )}
+        {userRole !== 'registrar' && userRole !== 'cafeteria' && userRole !== 'main_gate' && (
+          <>
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h3>
+              <div className="space-y-4">
+                {(stats.recentHistory && stats.recentHistory.length > 0 ? stats.recentHistory : []).slice(0, 6).map((item: EventLog, idx: number) => (
+                  <div key={item.LogID ?? idx} className="flex items-center space-x-4 p-3 bg-gray-50 rounded-lg">
+                    <div className={`h-10 w-10 rounded-full flex items-center justify-center ${item.Decision ? 'bg-green-100' : 'bg-red-100'}`}>
+                      {item.Decision ? (
+                        <CheckCircle className="h-5 w-5 text-green-600" />
+                      ) : (
+                        <XCircle className="h-5 w-5 text-red-600" />
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-gray-900">{item.FirstName || item.StudentID ? `${item.FirstName ?? ''} ${item.LastName ?? ''}`.trim() : 'Unknown student'}</p>
+                      <p className="text-xs text-gray-500">{new Date(item.EventTime || (item as any).AccessTime || Date.now()).toLocaleString()}</p>
+                    </div>
+                    <div className="text-sm font-medium text-gray-700">
+                      {item.Decision ? 'Success' : 'Failed'}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">System Status</h3>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                  <span className="text-sm font-medium text-gray-900">Recognition Service</span>
+                  <span className="px-3 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full">
+                    Operational
+                  </span>
                 </div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-900">{item.FirstName || item.StudentID ? `${item.FirstName ?? ''} ${item.LastName ?? ''}`.trim() : 'Unknown student'}</p>
-                  <p className="text-xs text-gray-500">{new Date(item.EventTime || (item as any).AccessTime || Date.now()).toLocaleString()}</p>
+                <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                  <span className="text-sm font-medium text-gray-900">Database</span>
+                  <span className="px-3 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full">
+                    Operational
+                  </span>
                 </div>
-                <div className="text-sm font-medium text-gray-700">
-                  {item.Decision ? 'Success' : 'Failed'}
+                <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                  <span className="text-sm font-medium text-gray-900">API Gateway</span>
+                  <span className="px-3 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full">
+                    Operational
+                  </span>
                 </div>
               </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">System Status</h3>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-              <span className="text-sm font-medium text-gray-900">Recognition Service</span>
-              <span className="px-3 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full">
-                Operational
-              </span>
             </div>
-            <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-              <span className="text-sm font-medium text-gray-900">Database</span>
-              <span className="px-3 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full">
-                Operational
-              </span>
-            </div>
-            <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-              <span className="text-sm font-medium text-gray-900">API Gateway</span>
-              <span className="px-3 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full">
-                Operational
-              </span>
-            </div>
-          </div>
-        </div>
+          </>
+        )}
       </div>
     </div>
   );
