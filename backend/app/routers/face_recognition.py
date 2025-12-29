@@ -53,24 +53,16 @@ async def verify_face(
 ):
     """Verify face against known faces"""
     try:
-        print(f"Verify request received - camera_id: {request.camera_id}")
         result = face_service.verify_face(db, request.image_data)
-        print(f"Verify result: success={result.get('success')}, confidence={result.get('confidence')}")
         result["timestamp"] = datetime.now().isoformat()
         camera = db.query(models.Camera).filter(models.Camera.CameraID == request.camera_id).first()
-        if camera is None:
-            camera_location = None
-        else:
-            camera_location = str(camera.Location)
+        camera_location = str(camera.Location) if camera else None
 
-        # Log all verification attempts (successful and failed)
         student_id = result["student"].get("StudentID") if result.get("student") else None
         confidence = result.get("confidence", 0.0)
-        access_granted = result.get("access_granted", False)
         success = result.get("success", False)
         decision_status = bool(success)
         
-        # Get the actual student record for logging
         student_record = None
         if student_id:
             student_record = db.query(models.Student).filter(models.Student.StudentID == student_id).first()
@@ -78,41 +70,50 @@ async def verify_face(
         # Determine portal type based on camera ID
         if request.camera_id == 2:
             # Cafeteria portal - log to CafeteriaLogs
-            meal_status = "meal eaten" if (decision_status and access_granted) else "meal not eaten"
-            notes = "Verification successful" if decision_status else "Verification failed"
-            if not access_granted and decision_status:
-                notes += " - Access denied: No cafeteria access"
-            
-            cafeteria_log = models.CafeteriaLog(
-                StudentID=student_record.id if student_record else None,
-                CameraID=request.camera_id,
-                MatchScore=confidence,
-                Decision=decision_status,
-                AccessTime=datetime.now(),
-                MealStatus=meal_status,
-                Notes=notes
-            )
-            db.add(cafeteria_log)
+            if student_record and getattr(student_record, 'CafeAccess', False):
+                cafeteria_log = models.CafeteriaLog(
+                    StudentID=getattr(student_record, 'id'),
+                    CameraID=request.camera_id,
+                    MatchScore=confidence,
+                    Decision=decision_status,
+                    AccessTime=datetime.now(),
+                    MealStatus="Allowed",
+                    Notes="Verification successful"
+                )
+                db.add(cafeteria_log)
+            elif student_record:
+                # NON CAFE STUDENT
+                cafeteria_log = models.CafeteriaLog(
+                    StudentID=getattr(student_record, 'id'),
+                    CameraID=request.camera_id,
+                    MatchScore=confidence,
+                    Decision=decision_status,
+                    AccessTime=datetime.now(),
+                    MealStatus="NON CAFE STUDENT",
+                    Notes="Student does not have cafeteria access"
+                )
+                db.add(cafeteria_log)
+                result["non_cafe_student"] = True
+                result["access_granted"] = False
         else:
             # Main gate portal - log to EventLogs
-            event_log = models.EventLog(
-                StudentID=student_record.id if student_record else None,
-                CameraID=request.camera_id,
-                MatchScore=confidence,
-                Decision=decision_status,
-                EventTime=datetime.now()
-            )
-            db.add(event_log)
+            if student_record:
+                event_log = models.EventLog(
+                    StudentID=student_record.id,
+                    CameraID=request.camera_id,
+                    MatchScore=confidence,
+                    Decision=decision_status,
+                    EventTime=datetime.now()
+                )
+                db.add(event_log)
         
         db.commit()
 
         if camera_location == "Cafeteria" and result.get("student"):
-            student_id = result["student"].get("StudentID")
             student = db.query(models.Student).filter(models.Student.StudentID == student_id).first()
-            has_cafe = bool(getattr(student, 'CafeAccess', False)) if student is not None else False
+            has_cafe = bool(getattr(student, 'CafeAccess', False)) if student else False
             if not has_cafe:
                 result["access_granted"] = False
-                result['message'] = result.get('message', '') + ' | Access denied: no cafeteria access on registration.'
 
         return result
     except Exception as e:
@@ -165,4 +166,3 @@ async def delete_face(
         return {"message": "Face deleted successfully"}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
-

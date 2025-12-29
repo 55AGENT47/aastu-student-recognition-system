@@ -102,16 +102,6 @@ class EventLog(Base):
     student = relationship("Student", back_populates="event_logs", foreign_keys=[StudentID])
     camera = relationship("Camera", back_populates="event_logs")
 
-class MealSchedule(Base):
-    __tablename__ = "MealSchedules"
-    ScheduleID = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    MealName = Column(String(50), nullable=False, unique=True)
-    StartTime = Column(String(8), nullable=False)
-    EndTime = Column(String(8), nullable=False)
-    IsActive = Column(Boolean, default=True)
-    CreatedAt = Column(DateTime, server_default=func.now())
-    UpdatedAt = Column(DateTime, server_default=func.now(), onupdate=func.now())
-
 class CafeteriaLog(Base):
     __tablename__ = "CafeteriaLogs"
     LogID = Column(Integer, primary_key=True, index=True, autoincrement=True)
@@ -121,9 +111,6 @@ class CafeteriaLog(Base):
     MatchScore = Column(Float)
     Decision = Column(Boolean, nullable=False)
     MealStatus = Column(String(50), default='meal not eaten')
-    MealPeriod = Column(String(50))
-    IsDuplicateAttempt = Column(Boolean, default=False)
-    FirstEntryTime = Column(DateTime)
     Notes = Column(String(255))
     student = relationship("Student", back_populates="cafeteria_logs", foreign_keys=[StudentID])
     camera = relationship("Camera", back_populates="cafeteria_logs")
@@ -137,14 +124,3 @@ class PasswordResetOTP(Base):
     expires_at = Column(DateTime, nullable=False)
     is_used = Column(Boolean, default=False)
 
-class Notification(Base):
-    __tablename__ = "Notifications"
-    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    title = Column(String(255), nullable=False)
-    message = Column(String(1000), nullable=False)
-    type = Column(String(50), default='system')
-    target_role = Column(String(50), nullable=False)
-    is_read = Column(Boolean, default=False)
-    created_at = Column(DateTime, server_default=func.now())
-    student_id = Column(Integer)
-    log_id = Column(Integer)
