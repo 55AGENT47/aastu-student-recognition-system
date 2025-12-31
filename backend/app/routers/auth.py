@@ -7,6 +7,7 @@ from ..utils.auth import authenticate_user, create_access_token, get_password_ha
 from ..models.schemas import Token
 from ..models.models import Student
 from ..config import settings
+from ..services.email_service import email_service
 
 router = APIRouter(prefix="/api/auth", tags=["authentication"])
 
@@ -19,9 +20,16 @@ class VerifyStudentRequest(BaseModel):
     email: str
     student_identifier: str
 
+class ForgotPasswordRequest(BaseModel):
+    email: str
+
+class VerifyOTPRequest(BaseModel):
+    email: str
+    otp_code: str
+
 class ResetPasswordRequest(BaseModel):
     email: str
-    student_identifier: str
+    otp_code: str
     new_password: str
 
 @router.post("/login", response_model=Token)
@@ -34,6 +42,36 @@ async def login_for_access_token(credentials: LoginRequest, db: Session = Depend
     identifier = user.email if credentials.role == "student" else credentials.username
     access_token = create_access_token(data={"sub": identifier, "role": credentials.role}, expires_delta=access_token_expires)
     return {"access_token": access_token, "token_type": "bearer", "user": user}
+
+@router.post("/forgot-password")
+async def forgot_password(request: ForgotPasswordRequest, db: Session = Depends(get_db)):
+    student = db.query(Student).filter(
+        Student.Email == request.email,
+        Student.IsActive == True
+    ).first()
+    
+    if not student:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No account found with this email")
+    
+    otp_code = email_service.generate_otp()
+    email_service.store_otp(db, request.email, otp_code)
+    
+    email_service.send_otp_email(
+        to_email=request.email,
+        otp_code=otp_code,
+        name=f"{student.FirstName} {student.LastName}"
+    )
+    
+    return {"message": "OTP sent to your email", "student_id": student.StudentID}
+
+@router.post("/verify-otp")
+async def verify_otp(request: VerifyOTPRequest, db: Session = Depends(get_db)):
+    is_valid = email_service.verify_otp(db, request.email, request.otp_code)
+    
+    if not is_valid:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid or expired OTP")
+    
+    return {"message": "OTP verified successfully"}
 
 @router.post("/verify-student")
 async def verify_student(request: VerifyStudentRequest, db: Session = Depends(get_db)):
@@ -50,15 +88,22 @@ async def verify_student(request: VerifyStudentRequest, db: Session = Depends(ge
 
 @router.post("/reset-password")
 async def reset_password(request: ResetPasswordRequest, db: Session = Depends(get_db)):
+    # Verify OTP and mark as used
+    is_valid = email_service.verify_otp(db, request.email, request.otp_code, mark_used=True)
+    
+    if not is_valid:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid or expired OTP")
+    
+    # Find student by email
     student = db.query(Student).filter(
         Student.Email == request.email,
-        Student.StudentID == request.student_identifier,
         Student.IsActive == True
     ).first()
     
     if not student:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Student not found or invalid credentials")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Student not found")
     
+    # Update password
     setattr(student, 'PasswordHash', get_password_hash(request.new_password))
     db.commit()
     

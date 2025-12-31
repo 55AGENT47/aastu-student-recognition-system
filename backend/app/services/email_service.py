@@ -11,8 +11,10 @@ class EmailService:
     def __init__(self):
         self.smtp_server = "smtp.gmail.com"
         self.smtp_port = 587
-        self.email = settings.smtp_email
-        self.password = settings.smtp_password
+        # Force load from environment variables directly
+        import os
+        self.email = os.getenv('SMTP_EMAIL', 'usmanamanayubmybrother@gmail.com').strip()
+        self.password = os.getenv('SMTP_PASSWORD', 'srmlptwmksekfhmg').strip().replace(' ', '')
 
     def generate_otp(self) -> str:
         return str(random.randint(100000, 999999))
@@ -25,16 +27,16 @@ class EmailService:
             msg['Subject'] = "Password Reset OTP - Student Recognition System"
 
             body = f"""
-            Dear {name},
+Dear {name},
 
-            Your OTP for password reset is: {otp_code}
+Your OTP for password reset is: {otp_code}
 
-            This OTP will expire in 10 minutes.
+This OTP will expire in 10 minutes.
 
-            If you didn't request this, please ignore this email.
+If you didn't request this, please ignore this email.
 
-            Best regards,
-            Student Recognition System
+Best regards,
+Student Recognition System
             """
 
             msg.attach(MIMEText(body, 'plain'))
@@ -46,7 +48,6 @@ class EmailService:
             server.quit()
             return True
         except Exception as e:
-            print(f"Email sending failed: {e}")
             return False
 
     def store_otp(self, db: Session, email: str, otp_code: str):
@@ -64,7 +65,7 @@ class EmailService:
         db.add(otp_record)
         db.commit()
 
-    def verify_otp(self, db: Session, email: str, otp_code: str) -> bool:
+    def verify_otp(self, db: Session, email: str, otp_code: str, mark_used: bool = False) -> bool:
         otp_record = db.query(models.PasswordResetOTP).filter(
             models.PasswordResetOTP.email == email,
             models.PasswordResetOTP.otp_code == otp_code,
@@ -73,8 +74,9 @@ class EmailService:
         ).first()
 
         if otp_record:
-            setattr(otp_record, 'is_used', True)
-            db.commit()
+            if mark_used:
+                setattr(otp_record, 'is_used', True)
+                db.commit()
             return True
         return False
 

@@ -373,8 +373,18 @@ export const apiService = {
     return response.json();
   },
 
-  async verifyOTP(email: string, otp_code: string, new_password: string) {
+  async verifyOTP(email: string, otp_code: string) {
     const response = await fetch(`${API_BASE}/api/auth/verify-otp`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, otp_code })
+    });
+    if (!response.ok) throw new Error(await response.text());
+    return response.json();
+  },
+
+  async resetPassword(email: string, otp_code: string, new_password: string) {
+    const response = await fetch(`${API_BASE}/api/auth/reset-password`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, otp_code, new_password })
