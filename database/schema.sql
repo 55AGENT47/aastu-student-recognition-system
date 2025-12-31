@@ -149,3 +149,17 @@ VALUES ('cafeteria@aastu.edu.et', '$2b$12$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.o
 
 INSERT IGNORE INTO MainGateSecurity (Username, PasswordHash, FullName, IsActive) 
 VALUES ('security@aastu.edu.et', '$2b$12$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW', 'Main Gate Security', TRUE);
+
+CREATE TABLE IF NOT EXISTS RegistrarOfficer (
+    OfficerID INT AUTO_INCREMENT PRIMARY KEY,
+    Username VARCHAR(255) NOT NULL UNIQUE,
+    PasswordHash VARCHAR(255) NOT NULL,
+    FullName VARCHAR(255),
+    LastLogin DATETIME,
+    IsActive BOOLEAN DEFAULT TRUE,
+    CreatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_registrar_username (Username)
+) ENGINE=InnoDB;
+
+INSERT IGNORE INTO RegistrarOfficer (Username, PasswordHash, FullName, IsActive) 
+VALUES ('registrar@aastu.edu.et', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj/SJx/6VO7u', 'Registrar Officer', TRUE);
