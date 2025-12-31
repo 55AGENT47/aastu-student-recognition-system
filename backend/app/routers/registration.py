@@ -108,7 +108,7 @@ async def register_student(
         )
     hashed_password = get_password_hash(password)
     
-    enrollment_date = datetime(enrollmentYear, 1, 1)
+    enrollment_date = datetime(enrollmentYear or 2024, 1, 1)
     
     db_student = models.Student(
         StudentID=studentId,
@@ -121,7 +121,7 @@ async def register_student(
         PhotoPath=photo,
         CafeAccess=cafeAccess,
         PasswordHash=hashed_password,
-        IsActive=True
+        IsActive=False
     )
     
     db.add(db_student)
@@ -133,6 +133,9 @@ async def register_student(
             # If refresh fails (can happen with certain session/PK configs),
             # re-query the student from the database as a safe fallback.
             db_student = db.query(models.Student).filter(models.Student.Email == email).first()
+            if not db_student:
+                db.rollback()
+                return JSONResponse(status_code=500, content={"detail": "Failed to retrieve created student"})
     except IntegrityError as e:
         db.rollback()
         logger.exception("IntegrityError while creating student: %s", e)
@@ -184,7 +187,7 @@ async def register_student(
             "Email": db_student.Email,
             "Department": db_student.Department,
             "EnrollmentYear": db_student.EnrollmentYear,
-            "EnrollmentDate": db_student.EnrollmentDate.isoformat() if db_student.EnrollmentDate else None,
+            "EnrollmentDate": db_student.EnrollmentDate.isoformat() if db_student.EnrollmentDate is not None else None,
             "PhotoPath": db_student.PhotoPath,
             "FaceImagePath": db_student.FaceImagePath,
             "CafeAccess": db_student.CafeAccess,
@@ -236,5 +239,42 @@ def get_departments():
     return {"departments": departments}
 
 @router.get("/registration/pending-students")
-def get_pending_students():
-    return []
+def get_pending_students(db: Session = Depends(get_db)):
+    pending = db.query(models.Student).filter(models.Student.IsActive == False).all()
+    return [{
+        "StudentID": s.StudentID,
+        "FirstName": s.FirstName,
+        "LastName": s.LastName,
+        "Email": s.Email,
+        "Department": s.Department,
+        "EnrollmentYear": s.EnrollmentYear,
+        "EnrollmentDate": s.EnrollmentDate.isoformat() if s.EnrollmentDate is not None else None,
+        "CafeAccess": s.CafeAccess,
+        "PhotoPath": s.PhotoPath
+    } for s in pending]
+
+@router.post("/registration/approve/{student_id}")
+def approve_student(student_id: str, db: Session = Depends(get_db)):
+    student = db.query(models.Student).filter(models.Student.StudentID == student_id).first()
+    if not student:
+        raise HTTPException(status_code=404, detail="Student not found")
+    setattr(student, 'IsActive', True)
+    db.commit()
+    return {"message": "Student approved successfully"}
+
+@router.post("/registration/reject/{student_id}")
+def reject_student(student_id: str, db: Session = Depends(get_db)):
+    student = db.query(models.Student).filter(models.Student.StudentID == student_id).first()
+    if not student:
+        raise HTTPException(status_code=404, detail="Student not found")
+    
+    # Track rejected student before deletion
+    rejected_record = models.RejectedStudent(
+        email=student.Email,
+        student_id=student.StudentID
+    )
+    db.add(rejected_record)
+    
+    db.delete(student)
+    db.commit()
+    return {"message": "Student rejected successfully"}

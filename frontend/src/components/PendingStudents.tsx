@@ -25,17 +25,25 @@ export default function PendingStudents() {
 
   const handleApproval = async (studentId: string, approved: boolean) => {
     try {
-      await fetch('/api/registration/approve-student', {
+      const endpoint = approved 
+        ? `/api/registration/approve/${studentId}` 
+        : `/api/registration/reject/${studentId}`;
+      
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
           'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ student_id: studentId, approved })
+        }
       });
+      
+      if (!response.ok) throw new Error('Failed to update student status');
       
       setPendingStudents(prev => prev.filter(s => s.StudentID !== studentId));
       alert(`Student ${approved ? 'approved' : 'rejected'} successfully`);
+      
+      // Trigger overview refresh
+      window.dispatchEvent(new Event('studentApprovalChanged'));
     } catch (error) {
       console.error('Failed to update student status:', error);
       alert('Failed to update student status');

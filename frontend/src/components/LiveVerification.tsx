@@ -389,7 +389,7 @@ export default function LiveVerification({ cameraId = 1, isActive = true, ipCame
     if ((cameraActive || ipCameraActive) && !verifying) {
       autoCaptureIntervalRef.current = setInterval(() => {
         captureFrame();
-      }, 3000);
+      }, 4000);
     } else {
       if (autoCaptureIntervalRef.current) {
         clearInterval(autoCaptureIntervalRef.current);
@@ -721,7 +721,7 @@ export default function LiveVerification({ cameraId = 1, isActive = true, ipCame
                 <div className="text-center text-sm p-3 rounded-lg bg-blue-50 text-gray-600">
                   <div className="flex items-center justify-center space-x-2">
                     <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></div>
-                    <span>Auto-detecting faces every 3 seconds...</span>
+                    <span>Auto-detecting faces every 4 seconds...</span>
                   </div>
                 </div>
                 

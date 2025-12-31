@@ -124,3 +124,9 @@ class PasswordResetOTP(Base):
     expires_at = Column(DateTime, nullable=False)
     is_used = Column(Boolean, default=False)
 
+class RejectedStudent(Base):
+    __tablename__ = "RejectedStudents"
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    email = Column(String(255), nullable=False, index=True)
+    student_id = Column(String(50), nullable=False)
+    rejected_at = Column(DateTime, server_default=func.now())

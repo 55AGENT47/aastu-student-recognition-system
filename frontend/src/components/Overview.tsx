@@ -42,9 +42,15 @@ export default function Overview() {
     fetchData();
 
     const interval = setInterval(fetchData, 10000); // refresh every 10s
+    
+    // Listen for approval changes
+    const handleApprovalChange = () => fetchData();
+    window.addEventListener('studentApprovalChanged', handleApprovalChange);
+    
     return () => {
       mounted = false;
       clearInterval(interval);
+      window.removeEventListener('studentApprovalChanged', handleApprovalChange);
     };
   }, [userRole]);
 

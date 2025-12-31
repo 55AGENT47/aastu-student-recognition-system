@@ -7,7 +7,7 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 from ..config import settings
 from ..database import get_db
-from ..models.models import Administrator, CafeteriaSecurity, MainGateSecurity, Student, RegistrarOfficer
+from ..models.models import Administrator, CafeteriaSecurity, MainGateSecurity, Student, RegistrarOfficer, RejectedStudent
 from ..models.schemas import TokenData, User
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto", bcrypt__rounds=12)
@@ -179,8 +179,21 @@ def authenticate_user(db: Session, username: str, password: str, role: str):
             name=str(user.FullName) if user.FullName is not None else username
         )
     elif role == "student":
-        user = db.query(Student).filter(Student.Email == username, Student.IsActive == True).first()
-        if not user or user.PasswordHash is None or not verify_password(password, str(user.PasswordHash)):
+        user = db.query(Student).filter(Student.Email == username).first()
+        if not user:
+            rejected = db.query(RejectedStudent).filter(RejectedStudent.email == username).first()
+            if rejected:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Incorrect username or password. You are rejected by registrar officer."
+                )
+            return False
+        if user.IsActive is False:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Your registration is pending approval by the Registrar Officer. Please wait for approval."
+            )
+        if user.PasswordHash is None or not verify_password(password, str(user.PasswordHash)):
             return False
         return User(
             id=str(user.StudentID),
