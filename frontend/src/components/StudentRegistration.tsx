@@ -225,17 +225,17 @@ export default function StudentRegistration({ onBackToLogin }: StudentRegistrati
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 px-4">
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
           <div className="flex justify-center mb-4">
             <AastuLogo size="lg" />
           </div>
-          <h2 className="text-3xl font-bold text-gray-900">Student Registration</h2>
-          <p className="mt-2 text-gray-600">Create your student account</p>
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Student Registration</h2>
+          <p className="mt-2 text-gray-600 dark:text-gray-300">Create your student account</p>
         </div>
 
-        <div className="bg-white rounded-xl shadow-lg p-8">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8">
           <button
             onClick={onBackToLogin}
             className="flex items-center text-blue-600 hover:text-blue-700 mb-6"

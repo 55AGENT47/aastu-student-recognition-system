@@ -234,3 +234,7 @@ def get_departments():
         "Engineering Management",
     ]
     return {"departments": departments}
+
+@router.get("/registration/pending-students")
+def get_pending_students():
+    return []

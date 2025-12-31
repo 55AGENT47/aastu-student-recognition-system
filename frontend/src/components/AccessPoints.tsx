@@ -357,7 +357,7 @@ export default function AccessPoints() {
           {points.map((point) => (
           <div
             key={point.CameraID}
-            className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow"
+            className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 hover:shadow-md transition-shadow"
           >
             <div className="flex items-start justify-between mb-4">
               <div className="flex items-center space-x-3">
@@ -369,8 +369,8 @@ export default function AccessPoints() {
                   }`} />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-gray-900">{point.Location}</h3>
-                  <p className="text-sm text-gray-500">{(point as any).IP_Address || 'No IP'}</p>
+                  <h3 className="font-semibold text-black">{point.Location}</h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">{(point as any).IP_Address || 'No IP'}</p>
                 </div>
               </div>
             </div>

@@ -1,15 +1,13 @@
 import { useState } from 'react';
-import { Camera, LogOut, ChefHat, LayoutDashboard, UtensilsCrossed, Smartphone, Calendar } from 'lucide-react';
+import { Camera, LogOut, ChefHat, LayoutDashboard, UtensilsCrossed, Smartphone } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import LiveVerification from './LiveVerification';
 import CafeteriaLogs from './CafeteriaLogs';
 import Overview from './Overview';
-import MealScheduleConfig from './MealScheduleConfig';
-import DuplicateAlert from './DuplicateAlert';
 
 import AastuLogo from './AastuLogo';
 
-type Tab = 'overview' | 'verification' | 'logs' | 'ip-camera' | 'meal-schedules';
+type Tab = 'overview' | 'verification' | 'logs' | 'ip-camera';
 
 export default function CafeteriaSecurityPortal() {
   const [activeTab, setActiveTab] = useState<Tab>('overview');
@@ -20,7 +18,6 @@ export default function CafeteriaSecurityPortal() {
     { id: 'verification' as Tab, name: 'Live Verification', icon: Camera },
     { id: 'ip-camera' as Tab, name: 'IP Camera Verification', icon: Smartphone },
     { id: 'logs' as Tab, name: 'Cafeteria Logs', icon: UtensilsCrossed },
-    { id: 'meal-schedules' as Tab, name: 'Meal Schedules', icon: Calendar },
   ];
 
   const renderContent = () => {
@@ -33,8 +30,6 @@ export default function CafeteriaSecurityPortal() {
         return <LiveVerification key="ip-camera-verification" cameraId={2} isActive={activeTab === 'ip-camera'} ipCameraOnly={true} />;
       case 'logs':
         return <CafeteriaLogs />;
-      case 'meal-schedules':
-        return <MealScheduleConfig />;
       default:
         return <Overview />;
     }
@@ -42,7 +37,6 @@ export default function CafeteriaSecurityPortal() {
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
-      <DuplicateAlert />
       <div className="flex flex-1">
         <aside className="w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col">
           <div className="p-6 border-b border-gray-200 dark:border-gray-700">

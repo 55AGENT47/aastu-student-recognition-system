@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { LayoutDashboard, Users, Clock, MapPin, LogOut, UtensilsCrossed, UserCog, Calendar } from 'lucide-react';
+import { LayoutDashboard, Users, Clock, MapPin, LogOut, UtensilsCrossed, UserCog } from 'lucide-react';
 import CafeAccessAdmin from './CafeAccessAdmin';
 import { useAuth } from '../context/AuthContext';
 import Overview from './Overview';
@@ -8,12 +8,10 @@ import MainLogs from './MainLogs';
 import CafeteriaLogs from './CafeteriaLogs';
 import AccessPoints from './AccessPoints';
 import ManageUsers from './ManageUsers';
-import MealScheduleConfig from './MealScheduleConfig';
-import DuplicateAlert from './DuplicateAlert';
 
 import AastuLogo from './AastuLogo';
 
-type Tab = 'overview' | 'students' | 'logs' | 'cafeteria-logs' | 'access-points' | 'cafe-access' | 'manage-users' | 'meal-schedules';
+type Tab = 'overview' | 'students' | 'logs' | 'cafeteria-logs' | 'access-points' | 'cafe-access' | 'manage-users';
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState<Tab>('overview');
@@ -26,7 +24,6 @@ export default function Dashboard() {
     { id: 'cafeteria-logs' as Tab, name: 'Cafeteria Logs', icon: UtensilsCrossed },
     { id: 'access-points' as Tab, name: 'Access Points', icon: MapPin },
     { id: 'cafe-access' as Tab, name: 'Cafeteria Access', icon: UtensilsCrossed },
-    { id: 'meal-schedules' as Tab, name: 'Meal Schedules', icon: Calendar },
     { id: 'manage-users' as Tab, name: 'Manage Users', icon: UserCog },
   ];
 
@@ -44,8 +41,6 @@ export default function Dashboard() {
         return <AccessPoints />;
       case 'cafe-access':
         return <CafeAccessAdmin />;
-      case 'meal-schedules':
-        return <MealScheduleConfig />;
       case 'manage-users':
         return <ManageUsers />;
       default:
@@ -55,7 +50,6 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
-      <DuplicateAlert />
       <div className="flex flex-1">
         <aside className="w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col">
           <div className="p-6 border-b border-gray-200 dark:border-gray-700">

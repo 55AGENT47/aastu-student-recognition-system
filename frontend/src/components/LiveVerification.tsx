@@ -1,9 +1,9 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Camera, Upload, CheckCircle, XCircle, User, Square, Smartphone, AlertTriangle } from 'lucide-react';
+import { Camera, Upload, CheckCircle, XCircle, User, Square, Smartphone } from 'lucide-react';
 import { apiService } from '../services/api';
 import { Student } from '../types';
 import IPCameraConfig from './IPCameraConfig';
-import DuplicateEntryAlert from './DuplicateEntryAlert';
+
 import { OptimizedStudentImage } from '../hooks/useOptimizedImage.tsx';
 
 interface VerificationDisplay {
@@ -13,9 +13,6 @@ interface VerificationDisplay {
   timestamp: string;
   access_granted: boolean;
   error?: string;
-  is_duplicate?: boolean;
-  first_entry_time?: string;
-  meal_period?: string;
 }
 
 interface LiveVerificationProps {
@@ -38,8 +35,6 @@ export default function LiveVerification({ cameraId = 1, isActive = true, ipCame
   const [verifying, setVerifying] = useState(false);
   const [result, setResult] = useState<VerificationDisplay | null>(null);
   const [cameraActive, setCameraActive] = useState(false);
-  const [showDuplicateAlert, setShowDuplicateAlert] = useState(false);
-  const [duplicateData, setDuplicateData] = useState<any>(null);
 
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [detectionMessage, setDetectionMessage] = useState<string | null>(null);
@@ -220,16 +215,6 @@ export default function LiveVerification({ cameraId = 1, isActive = true, ipCame
       const confidence = (data as any).confidence || 0;
       const isConfident = confidence >= 0.55;
       
-      if ((data as any).is_duplicate) {
-        setDuplicateData({
-          studentName: `${(data as any).student?.FirstName} ${(data as any).student?.LastName}`,
-          firstEntryTime: (data as any).first_entry_time,
-          currentTime: new Date().toISOString(),
-          mealPeriod: (data as any).meal_period
-        });
-        setShowDuplicateAlert(true);
-      }
-      
       setResult({
         ...data,
         success: data.success && isConfident,
@@ -237,10 +222,7 @@ export default function LiveVerification({ cameraId = 1, isActive = true, ipCame
         confidence: confidence,
         access_granted: isConfident && ((data as any).access_granted || false),
         timestamp: data.timestamp || new Date().toISOString(),
-        error: data.success && isConfident ? undefined : ((data as any).message || 'Unable to identify student'),
-        is_duplicate: (data as any).is_duplicate,
-        first_entry_time: (data as any).first_entry_time,
-        meal_period: (data as any).meal_period
+        error: data.success && isConfident ? undefined : ((data as any).message || 'Unable to identify student')
       });
 
     } catch (error) {
@@ -543,17 +525,7 @@ export default function LiveVerification({ cameraId = 1, isActive = true, ipCame
   };
 
   return (
-    <>
-      {showDuplicateAlert && duplicateData && (
-        <DuplicateEntryAlert
-          studentName={duplicateData.studentName}
-          firstEntryTime={duplicateData.firstEntryTime}
-          currentTime={duplicateData.currentTime}
-          mealPeriod={duplicateData.mealPeriod}
-          onClose={() => setShowDuplicateAlert(false)}
-        />
-      )}
-      <div className="space-y-6">
+    <div className="space-y-6">
       <div>
         <h2 className="text-3xl font-bold text-gray-900">{ipCameraOnly ? 'IP Camera Verification' : 'Live Verification'}</h2>
         <p className="mt-2 text-gray-600">{ipCameraOnly ? 'Verify student identity using IP camera' : 'Verify student identity using camera or uploaded images'}</p>
@@ -561,9 +533,9 @@ export default function LiveVerification({ cameraId = 1, isActive = true, ipCame
 
       <div className={`grid grid-cols-1 gap-6 items-stretch ${ipCameraOnly ? 'lg:grid-cols-[1fr_1.5fr]' : 'lg:grid-cols-[1fr_1fr_1.5fr]'}`}>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 h-full flex flex-col">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-8 h-full flex flex-col">
           <div className="mb-4">
-            <h3 className="text-lg font-semibold text-gray-900 mb-3">{ipCameraOnly ? 'IP Camera Verification' : webcamOnly ? 'Webcam Verification' : 'Camera Verification'}</h3>
+            <h3 className="text-lg font-semibold !text-black mb-3">{ipCameraOnly ? 'IP Camera Verification' : webcamOnly ? 'Webcam Verification' : 'Camera Verification'}</h3>
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
                 <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
@@ -790,8 +762,8 @@ export default function LiveVerification({ cameraId = 1, isActive = true, ipCame
 
 
         {!ipCameraOnly && (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 h-full flex flex-col">
-            <h3 className="text-lg font-semibold text-gray-900 mb-6">Upload Image</h3>
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-8 h-full flex flex-col">
+            <h3 className="text-lg font-semibold !text-black mb-6">Upload Image</h3>
 
             <div className="space-y-4">
               <div
@@ -835,18 +807,7 @@ export default function LiveVerification({ cameraId = 1, isActive = true, ipCame
           )}
 
           {result && (
-            <div className={`bg-white dark:bg-gray-800 rounded-xl shadow-sm border-2 overflow-hidden ${
-              result.is_duplicate ? 'border-red-500 animate-pulse' : 'border-gray-200 dark:border-gray-700'
-            }`}>
-              {result.is_duplicate && (
-                <div className="bg-red-600 text-white px-6 py-3 flex items-center space-x-3">
-                  <AlertTriangle className="h-6 w-6 animate-bounce" />
-                  <div>
-                    <p className="font-bold text-lg">DUPLICATE ENTRY DETECTED!</p>
-                    <p className="text-sm">Student already entered during {result.meal_period} period</p>
-                  </div>
-                </div>
-              )}
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border-2 border-gray-200 dark:border-gray-700 overflow-hidden">
               <div className="p-6">
                 <div className="flex flex-col md:flex-row gap-6">
                   {/* Student Profile Image */}
@@ -939,29 +900,7 @@ export default function LiveVerification({ cameraId = 1, isActive = true, ipCame
                         </div>
                       </div>
 
-                      {result.is_duplicate && result.first_entry_time && (
-                        <div className="pt-4 border-t-2 border-red-200 dark:border-red-800">
-                          <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-4">
-                            <p className="text-sm font-bold text-red-800 dark:text-red-300 mb-2 flex items-center">
-                              <AlertTriangle className="h-4 w-4 mr-2" />
-                              Duplicate Entry Alert
-                            </p>
-                            <div className="space-y-1 text-sm">
-                              <p className="text-red-700 dark:text-red-400">
-                                <strong>First Entry:</strong> {new Date(result.first_entry_time).toLocaleTimeString()}
-                              </p>
-                              <p className="text-red-700 dark:text-red-400">
-                                <strong>Meal Period:</strong> {result.meal_period}
-                              </p>
-                              <p className="text-red-700 dark:text-red-400 font-semibold mt-2">
-                                ⚠️ Access Denied - Already entered this meal period
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
-                      {result.student && !result.is_duplicate && (
+                      {result.student && (
                         <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
                           <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Cafeteria Access</p>
                           <div className="flex items-center">
@@ -988,6 +927,5 @@ export default function LiveVerification({ cameraId = 1, isActive = true, ipCame
         </div>
       </div>
     </div>
-    </>
   );
 }
