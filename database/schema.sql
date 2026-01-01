@@ -140,7 +140,7 @@ CREATE INDEX IF NOT EXISTS idx_admin_username ON Administrators(Username);
 CREATE INDEX IF NOT EXISTS idx_cafeteria_username ON CafeteriaSecurity(Username);
 CREATE INDEX IF NOT EXISTS idx_main_gate_username ON MainGateSecurity(Username);
 
--- Insert default users
+
 INSERT IGNORE INTO Administrators (Username, PasswordHash, FullName, IsActive) 
 VALUES ('admin@aastu.edu.et', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj/SJx/6VO7u', 'Administrator', TRUE);
 
