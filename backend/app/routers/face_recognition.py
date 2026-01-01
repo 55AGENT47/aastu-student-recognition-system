@@ -2,11 +2,14 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Form, UploadFile, File
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
+from sqlalchemy import and_, func
 from ..database import get_db
 from ..models import models, schemas
 from ..utils.auth import get_current_user, get_current_user_optional
 from ..services.face_recognition_service import face_service
-from datetime import datetime
+from ..services.notification_service import notification_service
+from ..utils.meal_period import get_meal_period
+from datetime import datetime, timedelta
 
 router = APIRouter(prefix="/api/face", tags=["face_recognition"])
 
@@ -70,17 +73,53 @@ async def verify_face(
         # Determine portal type based on camera ID
         if request.camera_id == 2:
             # Cafeteria portal - log to CafeteriaLogs
+            access_time = datetime.now()
+            meal_period = get_meal_period(access_time)
+            
             if student_record and getattr(student_record, 'CafeAccess', False):
+                # Check for duplicate entry in the same meal period today
+                today_start = access_time.replace(hour=0, minute=0, second=0, microsecond=0)
+                today_end = access_time.replace(hour=23, minute=59, second=59, microsecond=999)
+                
+                existing_logs = db.query(models.CafeteriaLog).filter(
+                    and_(
+                        models.CafeteriaLog.StudentID == getattr(student_record, 'id'),
+                        models.CafeteriaLog.AccessTime >= today_start,
+                        models.CafeteriaLog.AccessTime <= today_end,
+                        models.CafeteriaLog.MealPeriod == meal_period,
+                        models.CafeteriaLog.MealStatus != 'Denied',
+                        models.CafeteriaLog.MealStatus != 'NON CAFE STUDENT'
+                    )
+                ).all()
+                
+                is_duplicate = len(existing_logs) > 0
+                
                 cafeteria_log = models.CafeteriaLog(
                     StudentID=getattr(student_record, 'id'),
                     CameraID=request.camera_id,
                     MatchScore=confidence,
                     Decision=decision_status,
-                    AccessTime=datetime.now(),
-                    MealStatus="Allowed",
-                    Notes="Verification successful"
+                    AccessTime=access_time,
+                    MealPeriod=meal_period,
+                    MealStatus="Pending" if is_duplicate else "Allowed",
+                    Notes="Verification successful" + (" - Duplicate entry detected" if is_duplicate else "")
                 )
                 db.add(cafeteria_log)
+                db.flush()  # Get the LogID
+                
+                # Create notification for duplicate entry
+                if is_duplicate:
+                    student_name = f"{student_record.FirstName} {student_record.LastName}"
+                    log_id: int = getattr(cafeteria_log, 'LogID', 0)  # type: ignore
+                    notification_service.create_duplicate_entry_alert(
+                        db, 
+                        student_name, 
+                        getattr(student_record, 'id'), 
+                        log_id
+                    )
+                    result["is_duplicate"] = True
+                    result["log_id"] = log_id
+                    result["requires_action"] = True
             elif student_record:
                 # NON CAFE STUDENT
                 cafeteria_log = models.CafeteriaLog(
@@ -88,7 +127,8 @@ async def verify_face(
                     CameraID=request.camera_id,
                     MatchScore=confidence,
                     Decision=decision_status,
-                    AccessTime=datetime.now(),
+                    AccessTime=access_time,
+                    MealPeriod=meal_period,
                     MealStatus="NON CAFE STUDENT",
                     Notes="Student does not have cafeteria access"
                 )

@@ -118,6 +118,7 @@ def read_cafeteria_logs(
             "MatchScore": log.MatchScore,
             "Decision": log.Decision,
             "MealStatus": log.MealStatus,
+            "MealPeriod": getattr(log, 'MealPeriod', None),
             "Notes": log.Notes,
             "FirstName": first_name,
             "LastName": last_name,

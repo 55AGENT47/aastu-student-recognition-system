@@ -111,6 +111,7 @@ class CafeteriaLog(Base):
     MatchScore = Column(Float)
     Decision = Column(Boolean, nullable=False)
     MealStatus = Column(String(50), default='meal not eaten')
+    MealPeriod = Column(String(50), nullable=True)
     Notes = Column(String(255))
     student = relationship("Student", back_populates="cafeteria_logs", foreign_keys=[StudentID])
     camera = relationship("Camera", back_populates="cafeteria_logs")
@@ -130,3 +131,15 @@ class RejectedStudent(Base):
     email = Column(String(255), nullable=False, index=True)
     student_id = Column(String(50), nullable=False)
     rejected_at = Column(DateTime, server_default=func.now())
+
+class Notification(Base):
+    __tablename__ = "Notifications"
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    title = Column(String(255), nullable=False)
+    message = Column(String(500), nullable=False)
+    type = Column(String(50), default='system')
+    target_role = Column(String(50), nullable=False)
+    is_read = Column(Boolean, default=False)
+    created_at = Column(DateTime, server_default=func.now())
+    student_id = Column(Integer, ForeignKey("Students.id"), nullable=True)
+    log_id = Column(Integer, ForeignKey("CafeteriaLogs.LogID"), nullable=True)

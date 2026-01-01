@@ -120,6 +120,8 @@ export default function CafeteriaLogs() {
       const studentInfo = getStudentInfo(log.StudentID);
       return {
         ...log,
+        MealPeriod: (log as any).MealPeriod,
+        MealStatus: (log as any).MealStatus,
         studentName: studentInfo.name,
         studentIdentifier: studentInfo.identifier,
         cameraLocation: log.CameraLocation || getCameraLocation(log.CameraID),
@@ -137,7 +139,7 @@ export default function CafeteriaLogs() {
   const calculateAndFixDuplicatesByMealPeriod = (logs: typeof allLogs) => {
     const logsByStudentDateAndMeal = logs.reduce((acc, log) => {
       const dateKey = new Date(log.timestamp).toDateString();
-      const mealPeriod = (log as any).MealPeriod || 'Unknown';
+      const mealPeriod = log.MealPeriod || 'Unknown';
       const key = `${log.studentIdentifier}-${dateKey}-${mealPeriod}`;
       
       if (!acc[key]) {
@@ -153,7 +155,12 @@ export default function CafeteriaLogs() {
       );
       
       sortedLogs.forEach((log, index) => {
-        (log as any).IsDuplicateAttempt = index === 0 ? 0 : 1;
+        // Only mark as duplicate if it's not already denied or non-cafe student
+        if (log.MealStatus !== 'Denied' && log.MealStatus !== 'NON CAFE STUDENT') {
+          (log as any).IsDuplicateAttempt = index === 0 ? 0 : 1;
+        } else {
+          (log as any).IsDuplicateAttempt = 0;
+        }
       });
     });
     
@@ -340,7 +347,7 @@ export default function CafeteriaLogs() {
                     scope="col"
                     className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                   >
-                    Status
+                    Meal Status
                   </th>
                   <th
                     scope="col"
@@ -348,12 +355,14 @@ export default function CafeteriaLogs() {
                   >
                     Duplicate
                   </th>
-                  <th
-                    scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                  >
-                    Confidence
-                  </th>
+                  {filteredLogs.some(log => log.MealStatus !== 'NON CAFE STUDENT') && (
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
+                      Confidence
+                    </th>
+                  )}
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -363,35 +372,82 @@ export default function CafeteriaLogs() {
                   }`}>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
-                        <OptimizedStudentImage
-                          studentId={log.StudentID}
-                          size="thumbnail"
-                          className="h-10 w-10 rounded-full mr-3"
-                          alt={log.studentName}
-                          fallbackIcon={<UserCircle className="h-6 w-6 text-blue-600" />}
-                        />
-                        <div>
-                          <div className="text-sm font-medium text-gray-900">{log.studentName}</div>
-                          <div className="text-sm text-gray-500">ID: {log.studentIdentifier}</div>
-                        </div>
+                        {log.MealStatus === 'NON CAFE STUDENT' ? (
+                          <>
+                            <OptimizedStudentImage
+                              studentId={log.StudentID}
+                              size="thumbnail"
+                              className="h-10 w-10 rounded-full mr-3"
+                              alt={log.studentName}
+                              fallbackIcon={<UserCircle className="h-6 w-6 text-blue-600" />}
+                            />
+                            <div>
+                              <div className="text-sm font-medium text-gray-900">{log.studentName}</div>
+                              <div className="text-sm text-gray-500">ID: {log.studentIdentifier}</div>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <OptimizedStudentImage
+                              studentId={log.StudentID}
+                              size="thumbnail"
+                              className="h-10 w-10 rounded-full mr-3"
+                              alt={log.studentName}
+                              fallbackIcon={<UserCircle className="h-6 w-6 text-blue-600" />}
+                            />
+                            <div>
+                              <div className="text-sm font-medium text-gray-900">{log.studentName}</div>
+                              <div className="text-sm text-gray-500">ID: {log.studentIdentifier}</div>
+                            </div>
+                          </>
+                        )}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{log.formattedTime}</div>
-                      <div className="text-sm text-gray-500">{log.timeAgo}</div>
+                      {log.MealStatus === 'NON CAFE STUDENT' ? (
+                        <span className="text-xs text-gray-500">-</span>
+                      ) : (
+                        <>
+                          <div className="text-sm text-gray-900">{log.formattedTime}</div>
+                          <div className="text-sm text-gray-500">{log.timeAgo}</div>
+                        </>
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                        (log as any).MealPeriod === 'Breakfast' ? 'bg-yellow-100 text-yellow-800' :
-                        (log as any).MealPeriod === 'Lunch' ? 'bg-blue-100 text-blue-800' :
-                        (log as any).MealPeriod === 'Dinner' ? 'bg-purple-100 text-purple-800' :
-                        'bg-gray-100 text-gray-800'
-                      }`}>
-                        {(log as any).MealPeriod || 'N/A'}
-                      </span>
+                      {log.MealStatus === 'NON CAFE STUDENT' ? (
+                        <span className="text-xs text-gray-500">-</span>
+                      ) : (
+                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                          log.MealPeriod === 'Breakfast' ? 'bg-yellow-100 text-yellow-800' :
+                          log.MealPeriod === 'Lunch' ? 'bg-blue-100 text-blue-800' :
+                          log.MealPeriod === 'Dinner' ? 'bg-purple-100 text-purple-800' :
+                          'bg-gray-100 text-gray-800'
+                        }`}>
+                          {log.MealPeriod && !(log as any).IsDuplicateAttempt && 
+                           (log.MealStatus === 'Allowed' || log.MealStatus === 'Allowed with warning')
+                            ? `${log.MealPeriod} - ${new Date(log.AccessTime).toLocaleTimeString()}` 
+                            : (log.MealPeriod || 'N/A')}
+                        </span>
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      {log.isSuccess ? (
+                      {log.MealStatus === 'NON CAFE STUDENT' ? (
+                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                          NON CAFE STUDENT
+                        </span>
+                      ) : log.MealStatus === 'Denied' ? (
+                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                          Denied
+                        </span>
+                      ) : log.MealStatus === 'Allowed with warning' ? (
+                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-orange-100 text-orange-800">
+                          ⚠️ Allowed with warning
+                        </span>
+                      ) : log.MealStatus === 'Allowed' ? (
+                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                          Allowed
+                        </span>
+                      ) : log.isSuccess ? (
                         <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
                           Success
                         </span>
@@ -401,20 +457,24 @@ export default function CafeteriaLogs() {
                         </span>
                       )}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {(log as any).IsDuplicateAttempt ? (
-                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
-                          ⚠️ Yes
-                        </span>
-                      ) : (
-                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
-                          No
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {log.confidencePercentage}%
-                    </td>
+                    {log.MealStatus !== 'NON CAFE STUDENT' && (
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {(log as any).IsDuplicateAttempt ? (
+                          <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                            ⚠️ Yes
+                          </span>
+                        ) : (
+                          <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
+                            No
+                          </span>
+                        )}
+                      </td>
+                    )}
+                    {log.MealStatus !== 'NON CAFE STUDENT' && (
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {log.confidencePercentage}%
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>

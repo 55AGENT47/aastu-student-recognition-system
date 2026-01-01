@@ -33,9 +33,11 @@ export interface CafeteriaLog {
   MatchScore: number | null;
   Decision: boolean;
   MealStatus: string;
+  MealPeriod?: string | null;
   Notes: string | null;
   FirstName?: string;
   LastName?: string;
+  PhotoPath?: string | null;
   CameraLocation?: string;
 }
 

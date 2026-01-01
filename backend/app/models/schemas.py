@@ -92,6 +92,7 @@ class CafeteriaLogBase(BaseModel):
     MatchScore: Optional[float] = None
     Decision: bool
     MealStatus: Optional[str] = 'meal not eaten'
+    MealPeriod: Optional[str] = None
     Notes: Optional[str] = None
 
 class CafeteriaLogCreate(CafeteriaLogBase):
@@ -104,6 +105,7 @@ class CafeteriaLog(CafeteriaLogBase):
     LastName: Optional[str] = None
     PhotoPath: Optional[str] = None
     CameraLocation: Optional[str] = None
+    MealPeriod: Optional[str] = None
     
     model_config = {
         "from_attributes": True

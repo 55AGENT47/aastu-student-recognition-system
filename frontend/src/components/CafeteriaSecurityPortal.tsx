@@ -1,17 +1,39 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Camera, LogOut, ChefHat, LayoutDashboard, UtensilsCrossed, Smartphone } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import LiveVerification from './LiveVerification';
 import CafeteriaLogs from './CafeteriaLogs';
 import Overview from './Overview';
-
+import DuplicateEntryNotification from './DuplicateEntryNotification';
+import { apiService } from '../services/api';
+import { CafeteriaLog, Student as StudentType } from '../types';
 import AastuLogo from './AastuLogo';
 
 type Tab = 'overview' | 'verification' | 'logs' | 'ip-camera';
 
+interface Notification {
+  id: number;
+  title: string;
+  message: string;
+  type: string;
+  student_id: number | null;
+  log_id: number | null;
+  created_at: string;
+  is_read: boolean;
+}
+
+interface StudentInfo {
+  StudentID: string;
+  FirstName: string;
+  LastName: string;
+  PhotoPath?: string;
+}
+
 export default function CafeteriaSecurityPortal() {
   const [activeTab, setActiveTab] = useState<Tab>('overview');
   const { user, logout } = useAuth();
+  const [currentNotification, setCurrentNotification] = useState<Notification | null>(null);
+  const [student, setStudent] = useState<StudentInfo | null>(null);
 
   const tabs = [
     { id: 'overview' as Tab, name: 'Overview', icon: LayoutDashboard },
@@ -19,6 +41,74 @@ export default function CafeteriaSecurityPortal() {
     { id: 'ip-camera' as Tab, name: 'IP Camera Verification', icon: Smartphone },
     { id: 'logs' as Tab, name: 'Cafeteria Logs', icon: UtensilsCrossed },
   ];
+
+  useEffect(() => {
+    const checkNotifications = async () => {
+      try {
+        const notifications = await apiService.getNotifications();
+        const unreadDuplicate = notifications.find(
+          (n: Notification) => n.type === 'duplicate_entry' && !n.is_read
+        );
+        
+        if (unreadDuplicate) {
+          setCurrentNotification(unreadDuplicate);
+          // Fetch student info from the log if log_id is available
+          if (unreadDuplicate.log_id) {
+            try {
+              const logs = await apiService.getCafeteriaLogs() as CafeteriaLog[];
+              const log = logs.find((l) => l.LogID === unreadDuplicate.log_id);
+              if (log && log.FirstName && log.LastName) {
+                setStudent({
+                  StudentID: String(log.StudentID || 'N/A'),
+                  FirstName: log.FirstName,
+                  LastName: log.LastName,
+                  PhotoPath: (log as any).PhotoPath || undefined
+                });
+              } else if (unreadDuplicate.student_id) {
+                // Fallback to fetching from students list
+                const students = await apiService.getStudents() as StudentType[];
+                const foundStudent = students.find((s) => 
+                  (s as any).id === unreadDuplicate.student_id || 
+                  (s.StudentID && String(s.StudentID) === String(unreadDuplicate.student_id))
+                );
+                if (foundStudent) {
+                  setStudent({
+                    StudentID: String(foundStudent.StudentID || foundStudent.StudentIdentifier || (foundStudent as any).id || 'N/A'),
+                    FirstName: foundStudent.FirstName,
+                    LastName: foundStudent.LastName,
+                    PhotoPath: foundStudent.PhotoPath || undefined
+                  });
+                }
+              }
+            } catch (error) {
+              console.error('Failed to fetch student:', error);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch notifications:', error);
+      }
+    };
+
+    checkNotifications();
+    const interval = setInterval(checkNotifications, 5000); // Check every 5 seconds
+    
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleNotificationAction = async (_notificationId: number, _action: string) => {
+    setCurrentNotification(null);
+    setStudent(null);
+    // Refresh logs if on logs tab
+    if (activeTab === 'logs') {
+      window.dispatchEvent(new Event('refreshCafeteriaLogs'));
+    }
+  };
+
+  const handleCloseNotification = () => {
+    setCurrentNotification(null);
+    setStudent(null);
+  };
 
   const renderContent = () => {
     switch (activeTab) {
@@ -37,6 +127,14 @@ export default function CafeteriaSecurityPortal() {
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
+      {currentNotification && (
+        <DuplicateEntryNotification
+          notification={currentNotification}
+          student={student || undefined}
+          onAction={handleNotificationAction}
+          onClose={handleCloseNotification}
+        />
+      )}
       <div className="flex flex-1">
         <aside className="w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col">
           <div className="p-6 border-b border-gray-200 dark:border-gray-700">

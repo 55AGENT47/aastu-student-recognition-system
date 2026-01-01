@@ -5,7 +5,7 @@ from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 from .database import get_db, engine
 from .models import models
-from .routers import auth, students, cameras, logs, stats, face_recognition, registration, images, users
+from .routers import auth, students, cameras, logs, stats, face_recognition, registration, images, users, notifications
 from .utils.auth import get_password_hash
 from .services.face_recognition_service import face_service
 from .models.schemas import FaceValidationResponse
@@ -29,7 +29,7 @@ if not os.path.exists("uploads"):
 
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
-for router in [auth.router, students.router, cameras.router, logs.router, stats.router, face_recognition.router, registration.router, images.router, users.router]:
+for router in [auth.router, students.router, cameras.router, logs.router, stats.router, face_recognition.router, registration.router, images.router, users.router, notifications.router]:
     app.include_router(router)
 
 @app.post("/api/validate-face", response_model=FaceValidationResponse)
