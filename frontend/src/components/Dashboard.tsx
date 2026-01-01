@@ -11,7 +11,9 @@ import ManageUsers from './ManageUsers';
 
 import AastuLogo from './AastuLogo';
 
-type Tab = 'overview' | 'students' | 'logs' | 'cafeteria-logs' | 'access-points' | 'cafe-access' | 'manage-users';
+import MealScheduleConfig from './MealScheduleConfig';
+
+type Tab = 'overview' | 'students' | 'logs' | 'cafeteria-logs' | 'access-points' | 'cafe-access' | 'manage-users' | 'meal-schedule';
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState<Tab>('overview');
@@ -25,6 +27,7 @@ export default function Dashboard() {
     { id: 'access-points' as Tab, name: 'Access Points', icon: MapPin },
     { id: 'cafe-access' as Tab, name: 'Cafeteria Access', icon: UtensilsCrossed },
     { id: 'manage-users' as Tab, name: 'Manage Users', icon: UserCog },
+    { id: 'meal-schedule' as Tab, name: 'Meal Schedule', icon: Clock },
   ];
 
   const renderContent = () => {
@@ -43,6 +46,8 @@ export default function Dashboard() {
         return <CafeAccessAdmin />;
       case 'manage-users':
         return <ManageUsers />;
+      case 'meal-schedule':
+        return <MealScheduleConfig />;
       default:
         return <Overview />;
     }

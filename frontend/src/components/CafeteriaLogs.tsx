@@ -25,6 +25,9 @@ export default function CafeteriaLogs() {
   const [filter, setFilter] = useState<'all' | 'success' | 'failed'>('all');
   const [dateFilter, setDateFilter] = useState<{ start: string; end: string }>({ start: '', end: '' });
   const [locationFilter, setLocationFilter] = useState<string>('all');
+  const [mealPeriodFilter, setMealPeriodFilter] = useState<string>('all');
+  const [mealStatusFilter, setMealStatusFilter] = useState<string>('all');
+  const [duplicateFilter, setDuplicateFilter] = useState<string>('all');
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [showClearLogsModal, setShowClearLogsModal] = useState(false);
   const [clearDaysOld, setClearDaysOld] = useState<number | ''>('');
@@ -155,11 +158,17 @@ export default function CafeteriaLogs() {
       );
       
       sortedLogs.forEach((log, index) => {
-        // Only mark as duplicate if it's not already denied or non-cafe student
-        if (log.MealStatus !== 'Denied' && log.MealStatus !== 'NON CAFE STUDENT') {
-          (log as any).IsDuplicateAttempt = index === 0 ? 0 : 1;
-        } else {
+        // NON CAFE STUDENT is never a duplicate
+        if (log.MealStatus === 'NON CAFE STUDENT') {
           (log as any).IsDuplicateAttempt = 0;
+        }
+        // If denied, it's a duplicate
+        else if (log.MealStatus === 'Denied') {
+          (log as any).IsDuplicateAttempt = 1;
+        }
+        // Otherwise check if it's the first entry
+        else {
+          (log as any).IsDuplicateAttempt = index === 0 ? 0 : 1;
         }
       });
     });
@@ -184,6 +193,10 @@ export default function CafeteriaLogs() {
       if (logDate > endDate) return false;
     }
     if (locationFilter !== 'all' && log.cameraLocation !== locationFilter) return false;
+    if (mealPeriodFilter !== 'all' && log.MealPeriod !== mealPeriodFilter) return false;
+    if (mealStatusFilter !== 'all' && log.MealStatus !== mealStatusFilter) return false;
+    if (duplicateFilter === 'yes' && !(log as any).IsDuplicateAttempt) return false;
+    if (duplicateFilter === 'no' && (log as any).IsDuplicateAttempt) return false;
     return true;
   });
 
@@ -254,16 +267,19 @@ export default function CafeteriaLogs() {
           <button
             onClick={() => {
               const csv = [
-                ['Student', 'Student ID', 'Time', 'Location', 'Status', 'Confidence'],
+                ['Student', 'Student ID', 'Time', 'Location', 'Meal Period', 'Meal Status', 'Duplicate', 'Confidence', 'Notes'],
                 ...filteredLogs.map(log => [
                   log.studentName,
                   log.studentIdentifier,
                   log.formattedTime,
                   log.cameraLocation,
-                  log.isSuccess ? 'Success' : 'Failed',
-                  `${log.confidencePercentage}%`
+                  log.MealPeriod || 'N/A',
+                  log.MealStatus || (log.isSuccess ? 'Success' : 'Failed'),
+                  (log as any).IsDuplicateAttempt ? 'Yes' : 'No',
+                  `${log.confidencePercentage}%`,
+                  (log as any).Notes || ''
                 ])
-              ].map(row => row.join(',')).join('\n');
+              ].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
               const blob = new Blob([csv], { type: 'text/csv' });
               const url = URL.createObjectURL(blob);
               const a = document.createElement('a');
@@ -423,8 +439,7 @@ export default function CafeteriaLogs() {
                           log.MealPeriod === 'Dinner' ? 'bg-purple-100 text-purple-800' :
                           'bg-gray-100 text-gray-800'
                         }`}>
-                          {log.MealPeriod && !(log as any).IsDuplicateAttempt && 
-                           (log.MealStatus === 'Allowed' || log.MealStatus === 'Allowed with warning')
+                          {log.MealPeriod && (log.MealStatus === 'Allowed' || log.MealStatus === 'Allowed with warning')
                             ? `${log.MealPeriod} - ${new Date(log.AccessTime).toLocaleTimeString()}` 
                             : (log.MealPeriod || 'N/A')}
                         </span>
@@ -556,7 +571,15 @@ export default function CafeteriaLogs() {
             <div className="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
               <div>
                 <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
-                  <h3 className="text-lg leading-6 font-medium text-gray-900">Filter Logs</h3>
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-lg leading-6 font-medium text-gray-900">Filter Logs</h3>
+                    <button
+                      onClick={() => setShowFilterModal(false)}
+                      className="text-gray-400 hover:text-gray-500"
+                    >
+                      <XCircle className="h-6 w-6" />
+                    </button>
+                  </div>
                   <div className="mt-4 space-y-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
@@ -608,6 +631,46 @@ export default function CafeteriaLogs() {
                         ))}
                       </select>
                     </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Meal Period</label>
+                      <select
+                        value={mealPeriodFilter}
+                        onChange={(e) => setMealPeriodFilter(e.target.value)}
+                        className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+                      >
+                        <option value="all">All Periods</option>
+                        <option value="Breakfast">Breakfast</option>
+                        <option value="Lunch">Lunch</option>
+                        <option value="Dinner">Dinner</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Meal Status</label>
+                      <select
+                        value={mealStatusFilter}
+                        onChange={(e) => setMealStatusFilter(e.target.value)}
+                        className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+                      >
+                        <option value="all">All Status</option>
+                        <option value="Allowed">Allowed</option>
+                        <option value="Denied">Denied</option>
+                        <option value="Pending">Pending</option>
+                        <option value="Allowed with warning">Allowed with warning</option>
+                        <option value="NON CAFE STUDENT">NON CAFE STUDENT</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Duplicate Entry</label>
+                      <select
+                        value={duplicateFilter}
+                        onChange={(e) => setDuplicateFilter(e.target.value)}
+                        className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+                      >
+                        <option value="all">All</option>
+                        <option value="yes">Yes</option>
+                        <option value="no">No</option>
+                      </select>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -625,6 +688,9 @@ export default function CafeteriaLogs() {
                     setFilter('all');
                     setDateFilter({ start: '', end: '' });
                     setLocationFilter('all');
+                    setMealPeriodFilter('all');
+                    setMealStatusFilter('all');
+                    setDuplicateFilter('all');
                   }}
                   className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:w-auto sm:text-sm"
                 >

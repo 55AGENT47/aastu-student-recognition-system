@@ -9,7 +9,9 @@ import { apiService } from '../services/api';
 import { CafeteriaLog, Student as StudentType } from '../types';
 import AastuLogo from './AastuLogo';
 
-type Tab = 'overview' | 'verification' | 'logs' | 'ip-camera';
+import MealScheduleConfig from './MealScheduleConfig';
+
+type Tab = 'overview' | 'verification' | 'logs' | 'ip-camera' | 'meal-schedule';
 
 interface Notification {
   id: number;
@@ -34,12 +36,22 @@ export default function CafeteriaSecurityPortal() {
   const { user, logout } = useAuth();
   const [currentNotification, setCurrentNotification] = useState<Notification | null>(null);
   const [student, setStudent] = useState<StudentInfo | null>(null);
+  const [showRestartButton, setShowRestartButton] = useState(false);
+
+  useEffect(() => {
+    const restartTab = sessionStorage.getItem('cafeteria_restart_tab');
+    if (restartTab) {
+      sessionStorage.removeItem('cafeteria_restart_tab');
+      setActiveTab(restartTab as Tab);
+    }
+  }, []);
 
   const tabs = [
     { id: 'overview' as Tab, name: 'Overview', icon: LayoutDashboard },
     { id: 'verification' as Tab, name: 'Live Verification', icon: Camera },
     { id: 'ip-camera' as Tab, name: 'IP Camera Verification', icon: Smartphone },
     { id: 'logs' as Tab, name: 'Cafeteria Logs', icon: UtensilsCrossed },
+    { id: 'meal-schedule' as Tab, name: 'Meal Schedule', icon: ChefHat },
   ];
 
   useEffect(() => {
@@ -99,6 +111,7 @@ export default function CafeteriaSecurityPortal() {
   const handleNotificationAction = async (_notificationId: number, _action: string) => {
     setCurrentNotification(null);
     setStudent(null);
+    setShowRestartButton(true);
     // Refresh logs if on logs tab
     if (activeTab === 'logs') {
       window.dispatchEvent(new Event('refreshCafeteriaLogs'));
@@ -108,6 +121,13 @@ export default function CafeteriaSecurityPortal() {
   const handleCloseNotification = () => {
     setCurrentNotification(null);
     setStudent(null);
+    setShowRestartButton(true);
+  };
+
+  const handleRestartCamera = () => {
+    sessionStorage.setItem('cafeteria_restart_tab', activeTab);
+    setShowRestartButton(false);
+    window.location.reload();
   };
 
   const renderContent = () => {
@@ -115,11 +135,13 @@ export default function CafeteriaSecurityPortal() {
       case 'overview':
         return <Overview />;
       case 'verification':
-        return <LiveVerification key="live-verification" cameraId={2} isActive={activeTab === 'verification'} webcamOnly={true} />;
+        return <LiveVerification key="live-verification" cameraId={2} isActive={activeTab === 'verification' && !currentNotification} webcamOnly={true} />;
       case 'ip-camera':
-        return <LiveVerification key="ip-camera-verification" cameraId={2} isActive={activeTab === 'ip-camera'} ipCameraOnly={true} />;
+        return <LiveVerification key="ip-camera-verification" cameraId={2} isActive={activeTab === 'ip-camera' && !currentNotification} ipCameraOnly={true} />;
       case 'logs':
         return <CafeteriaLogs />;
+      case 'meal-schedule':
+        return <MealScheduleConfig />;
       default:
         return <Overview />;
     }
@@ -191,6 +213,21 @@ export default function CafeteriaSecurityPortal() {
 
         <main className="flex-1 overflow-auto bg-gray-50 dark:bg-gray-900">
           <div className="max-w-7xl mx-auto px-8 py-8">
+            {showRestartButton && (activeTab === 'verification' || activeTab === 'ip-camera') && (
+              <div className="mb-4 bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <Camera className="h-5 w-5 text-blue-600" />
+                  <span className="text-sm font-medium text-blue-900">Camera stopped after notification</span>
+                </div>
+                <button
+                  onClick={handleRestartCamera}
+                  className="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  <Camera className="h-4 w-4 mr-2" />
+                  Start Camera
+                </button>
+              </div>
+            )}
             {renderContent()}
           </div>
         </main>

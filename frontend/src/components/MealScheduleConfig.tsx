@@ -27,7 +27,7 @@ export default function MealScheduleConfig() {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get(`${API_BASE}/api/meal-schedules`, {
+      const response = await axios.get(`${API_BASE}/api/meal-schedules/`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setSchedules(response.data);
@@ -43,7 +43,14 @@ export default function MealScheduleConfig() {
     setMessage('');
     try {
       const token = localStorage.getItem('token');
-      await axios.post(`${API_BASE}/api/meal-schedules`, schedule, {
+      const payload = {
+        ScheduleID: schedule.ScheduleID,
+        MealName: schedule.MealName,
+        StartTime: schedule.StartTime.length === 5 ? schedule.StartTime + ':00' : schedule.StartTime,
+        EndTime: schedule.EndTime.length === 5 ? schedule.EndTime + ':00' : schedule.EndTime,
+        IsActive: schedule.IsActive
+      };
+      await axios.post(`${API_BASE}/api/meal-schedules/`, payload, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setMessage('Schedule saved successfully!');
@@ -123,7 +130,7 @@ export default function MealScheduleConfig() {
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Start Time</label>
                 <input
                   type="time"
-                  value={schedule.StartTime}
+                  value={schedule.StartTime.substring(0, 5)}
                   onChange={(e) => updateSchedule(index, 'StartTime', e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
                 />
@@ -132,7 +139,7 @@ export default function MealScheduleConfig() {
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">End Time</label>
                 <input
                   type="time"
-                  value={schedule.EndTime}
+                  value={schedule.EndTime.substring(0, 5)}
                   onChange={(e) => updateSchedule(index, 'EndTime', e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
                 />

@@ -74,7 +74,17 @@ async def verify_face(
         if request.camera_id == 2:
             # Cafeteria portal - log to CafeteriaLogs
             access_time = datetime.now()
-            meal_period = get_meal_period(access_time)
+            
+            # Get meal schedules
+            schedules = db.query(models.MealSchedule).filter(models.MealSchedule.IsActive == True).all()
+            schedule_list = [{
+                'MealName': s.MealName,
+                'StartTime': s.StartTime,
+                'EndTime': s.EndTime,
+                'IsActive': s.IsActive
+            } for s in schedules] if schedules else None
+            
+            meal_period = get_meal_period(access_time, schedule_list)
             
             if student_record and getattr(student_record, 'CafeAccess', False):
                 # Check for duplicate entry in the same meal period today
@@ -92,7 +102,7 @@ async def verify_face(
                     )
                 ).all()
                 
-                is_duplicate = len(existing_logs) > 0
+                is_duplicate = len(existing_logs) > 0 and success and confidence >= 0.55
                 
                 cafeteria_log = models.CafeteriaLog(
                     StudentID=getattr(student_record, 'id'),
@@ -107,7 +117,7 @@ async def verify_face(
                 db.add(cafeteria_log)
                 db.flush()  # Get the LogID
                 
-                # Create notification for duplicate entry
+                # Create notification for duplicate entry only if verified
                 if is_duplicate:
                     student_name = f"{student_record.FirstName} {student_record.LastName}"
                     log_id: int = getattr(cafeteria_log, 'LogID', 0)  # type: ignore

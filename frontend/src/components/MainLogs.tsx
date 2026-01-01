@@ -24,6 +24,7 @@ export default function MainLogs() {
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<'all' | 'success' | 'failed'>('all');
   const [dateFilter, setDateFilter] = useState<{ start: string; end: string }>({ start: '', end: '' });
+  const [timeFilter, setTimeFilter] = useState<{ start: string; end: string }>({ start: '', end: '' });
   const [locationFilter, setLocationFilter] = useState<string>('all');
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [showClearLogsModal, setShowClearLogsModal] = useState(false);
@@ -147,6 +148,14 @@ export default function MainLogs() {
       endDate.setHours(23, 59, 59, 999);
       if (logDate > endDate) return false;
     }
+    if (timeFilter.start) {
+      const logTime = new Date(log.timestamp).toTimeString().slice(0, 5);
+      if (logTime < timeFilter.start) return false;
+    }
+    if (timeFilter.end) {
+      const logTime = new Date(log.timestamp).toTimeString().slice(0, 5);
+      if (logTime > timeFilter.end) return false;
+    }
     if (locationFilter !== 'all' && log.cameraLocation !== locationFilter) return false;
     return true;
   });
@@ -218,16 +227,17 @@ export default function MainLogs() {
           <button
             onClick={() => {
               const csv = [
-                ['Student', 'Student ID', 'Time', 'Location', 'Status', 'Confidence'],
+                ['Student', 'Student ID', 'Time', 'Location', 'Status', 'Confidence', 'Decision'],
                 ...filteredLogs.map(log => [
                   log.studentName,
                   log.studentIdentifier,
                   log.formattedTime,
                   log.cameraLocation,
                   log.isSuccess ? 'Success' : 'Failed',
-                  `${log.confidencePercentage}%`
+                  `${log.confidencePercentage}%`,
+                  log.decision ? 'Granted' : 'Denied'
                 ])
-              ].map(row => row.join(',')).join('\n');
+              ].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
               const blob = new Blob([csv], { type: 'text/csv' });
               const url = URL.createObjectURL(blob);
               const a = document.createElement('a');
@@ -441,7 +451,15 @@ export default function MainLogs() {
             <div className="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
               <div>
                 <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
-                  <h3 className="text-lg leading-6 font-medium text-gray-900">Filter Logs</h3>
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-lg leading-6 font-medium text-gray-900">Filter Logs</h3>
+                    <button
+                      onClick={() => setShowFilterModal(false)}
+                      className="text-gray-400 hover:text-gray-500"
+                    >
+                      <XCircle className="h-6 w-6" />
+                    </button>
+                  </div>
                   <div className="mt-4 space-y-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
@@ -479,6 +497,29 @@ export default function MainLogs() {
                       </div>
                     </div>
                     <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Time Range</label>
+                      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                        <div>
+                          <label className="block text-xs text-gray-500 mb-1">From</label>
+                          <input
+                            type="time"
+                            value={timeFilter.start}
+                            onChange={(e) => setTimeFilter({ ...timeFilter, start: e.target.value })}
+                            className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs text-gray-500 mb-1">To</label>
+                          <input
+                            type="time"
+                            value={timeFilter.end}
+                            onChange={(e) => setTimeFilter({ ...timeFilter, end: e.target.value })}
+                            className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
                       <select
                         value={locationFilter}
@@ -509,6 +550,7 @@ export default function MainLogs() {
                   onClick={() => {
                     setFilter('all');
                     setDateFilter({ start: '', end: '' });
+                    setTimeFilter({ start: '', end: '' });
                     setLocationFilter('all');
                   }}
                   className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:w-auto sm:text-sm"

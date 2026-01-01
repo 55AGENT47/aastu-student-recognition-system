@@ -3,6 +3,7 @@ import { Camera, Upload, CheckCircle, XCircle, User, Square, Smartphone } from '
 import { apiService } from '../services/api';
 import { Student } from '../types';
 import IPCameraConfig from './IPCameraConfig';
+import { soundAlerts } from '../utils/soundAlerts';
 
 import { OptimizedStudentImage } from '../hooks/useOptimizedImage.tsx';
 
@@ -47,6 +48,7 @@ export default function LiveVerification({ cameraId = 1, isActive = true, ipCame
   const [webcamActive, setWebcamActive] = useState(false);
   const [ipCameraActive, setIpCameraActive] = useState(false);
   const [ipCameraConnected, setIpCameraConnected] = useState(false);
+  const [unknownAlertActive, setUnknownAlertActive] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement | HTMLImageElement | null>(null);
@@ -72,13 +74,17 @@ export default function LiveVerification({ cameraId = 1, isActive = true, ipCame
     }
 
     setWebcamActive(false);
-    if (cameraMode === 'webcam') {
-      setCameraActive(false);
-      setCameraError(null);
-      setDetectedFaces([]);
-      setDetectionMessage(null);
+    setCameraActive(false);
+    setCameraError(null);
+    setDetectedFaces([]);
+    setDetectionMessage(null);
+    
+    // Stop unknown student alert when camera stops (Main Gate only)
+    if (cameraId === 1 && unknownAlertActive) {
+      soundAlerts.stopUnknownStudentAlert();
+      setUnknownAlertActive(false);
     }
-  }, [cameraMode]);
+  }, [cameraId, unknownAlertActive]);
 
   const stopIpCamera = useCallback(() => {
     const mediaElement = videoRef.current;
@@ -93,13 +99,17 @@ export default function LiveVerification({ cameraId = 1, isActive = true, ipCame
 
     setIpCameraActive(false);
     setIpCameraConnected(false);
-    if (cameraMode === 'ip') {
-      setCameraActive(false);
-      setCameraError(null);
-      setDetectedFaces([]);
-      setDetectionMessage(null);
+    setCameraActive(false);
+    setCameraError(null);
+    setDetectedFaces([]);
+    setDetectionMessage(null);
+    
+    // Stop unknown student alert when camera stops (Main Gate only)
+    if (cameraId === 1 && unknownAlertActive) {
+      soundAlerts.stopUnknownStudentAlert();
+      setUnknownAlertActive(false);
     }
-  }, [cameraMode]);
+  }, [cameraId, unknownAlertActive]);
 
   const stopCamera = useCallback(() => {
     stopWebcam();
@@ -215,6 +225,18 @@ export default function LiveVerification({ cameraId = 1, isActive = true, ipCame
       const confidence = (data as any).confidence || 0;
       const isConfident = confidence >= 0.55;
       
+      // Play continuous sound for unknown student in Main Gate portal only
+      if (cameraId === 1 && (!isConfident || !data.success)) {
+        if (!unknownAlertActive) {
+          soundAlerts.startUnknownStudentAlert();
+          setUnknownAlertActive(true);
+        }
+      } else if (cameraId === 1 && isConfident && data.success && unknownAlertActive) {
+        // Stop alert when student is recognized
+        soundAlerts.stopUnknownStudentAlert();
+        setUnknownAlertActive(false);
+      }
+      
       setResult({
         ...data,
         success: data.success && isConfident,
@@ -239,7 +261,7 @@ export default function LiveVerification({ cameraId = 1, isActive = true, ipCame
     } finally {
       setVerifying(false);
     }
-  }, [cameraId, isImageUpload]);
+  }, [cameraId, isImageUpload, unknownAlertActive]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -308,6 +330,18 @@ export default function LiveVerification({ cameraId = 1, isActive = true, ipCame
       startWebcam();
     }
     
+    const handleRestartCamera = () => {
+      setTimeout(() => {
+        if (cameraMode === 'ip' || ipCameraOnly) {
+          startIpCamera();
+        } else {
+          startWebcam();
+        }
+      }, 100);
+    };
+    
+    window.addEventListener('restartCamera', handleRestartCamera);
+    
     // Listen for student profile updates to refresh verification results
     const handleProfileUpdate = () => {
       // If we have a current result, we might want to refresh it
@@ -320,6 +354,7 @@ export default function LiveVerification({ cameraId = 1, isActive = true, ipCame
     window.addEventListener('studentImageUpdated', handleProfileUpdate);
     
     return () => {
+      window.removeEventListener('restartCamera', handleRestartCamera);
       window.removeEventListener('studentProfileUpdated', handleProfileUpdate);
       window.removeEventListener('studentImageUpdated', handleProfileUpdate);
       
@@ -347,7 +382,7 @@ export default function LiveVerification({ cameraId = 1, isActive = true, ipCame
       }
       setCameraActive(false);
     };
-  }, [startCamera]);
+  }, [startCamera, ipCameraOnly, cameraMode, startIpCamera, startWebcam]);
 
   useEffect(() => {
     if (ipCameraActive && ipCameraUrl) {
@@ -389,7 +424,7 @@ export default function LiveVerification({ cameraId = 1, isActive = true, ipCame
     if ((cameraActive || ipCameraActive) && !verifying) {
       autoCaptureIntervalRef.current = setInterval(() => {
         captureFrame();
-      }, 4000);
+      }, 5000);
     } else {
       if (autoCaptureIntervalRef.current) {
         clearInterval(autoCaptureIntervalRef.current);
@@ -721,7 +756,7 @@ export default function LiveVerification({ cameraId = 1, isActive = true, ipCame
                 <div className="text-center text-sm p-3 rounded-lg bg-blue-50 text-gray-600">
                   <div className="flex items-center justify-center space-x-2">
                     <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></div>
-                    <span>Auto-detecting faces every 4 seconds...</span>
+                    <span>Auto-detecting faces every 5 seconds...</span>
                   </div>
                 </div>
                 
@@ -786,6 +821,12 @@ export default function LiveVerification({ cameraId = 1, isActive = true, ipCame
                 />
               </div>
 
+              {cameraId === 1 && unknownAlertActive && (
+                <div className="rounded-lg border-2 border-red-500 bg-red-50 px-4 py-3 text-sm text-red-800 font-semibold animate-pulse">
+                  ⚠️ Unknown Student Detected - Turn off camera to stop alert
+                </div>
+              )}
+
               {verifying && (
                 <div className="flex items-center justify-center py-4">
                   <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
@@ -829,13 +870,19 @@ export default function LiveVerification({ cameraId = 1, isActive = true, ipCame
                         )}
                       </div>
                       <div className="absolute -top-2 -right-2">
-                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
-                          result.success 
-                            ? 'bg-green-100 text-green-800' 
-                            : 'bg-red-100 text-red-800'
-                        }`}>
-                          {result.success ? 'Verified' : 'Verification Failed'}
-                        </span>
+                        {(result as any).non_cafe_student ? (
+                          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                            NON-CAFE STUDENT
+                          </span>
+                        ) : (
+                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
+                            result.success 
+                              ? 'bg-green-100 text-green-800' 
+                              : 'bg-red-100 text-red-800'
+                          }`}>
+                            {result.success ? 'Verified' : 'Verification Failed'}
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -900,7 +947,7 @@ export default function LiveVerification({ cameraId = 1, isActive = true, ipCame
                         </div>
                       </div>
 
-                      {result.student && (
+                      {result.student && cameraId === 2 && (
                         <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
                           <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Cafeteria Access</p>
                           <div className="flex items-center">

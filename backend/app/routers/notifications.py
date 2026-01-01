@@ -33,11 +33,14 @@ def mark_notification_read(
 @router.post("/{notification_id}/action")
 def handle_notification_action(
     notification_id: int,
-    action: str = Query(..., regex="^(allow|deny|flag)$"),
+    action: str = Query(...),
     db: Session = Depends(get_db),
     current_user: schemas.User = Depends(get_current_user)
 ):
     """Handle notification action (ALLOW, DENY, FLAG) for duplicate entries"""
+    if action not in ["allow", "deny", "flag"]:
+        raise HTTPException(status_code=400, detail="Invalid action. Must be 'allow', 'deny', or 'flag'")
+    
     if current_user.role != "cafeteria":
         raise HTTPException(status_code=403, detail="Only cafeteria security can perform this action")
     
@@ -45,50 +48,41 @@ def handle_notification_action(
         models.Notification.id == notification_id
     ).first()
     
-    if notification is None:
+    if not notification:
         raise HTTPException(status_code=404, detail="Notification not found")
     
-    # Access notification attributes (these are Python values, not Column objects at runtime)
-    notification_type: str = getattr(notification, 'type', None)  # type: ignore
-    if notification_type != "duplicate_entry":
+    if notification.type != "duplicate_entry":  # type: ignore
         raise HTTPException(status_code=400, detail="This action is only for duplicate entry notifications")
     
-    log_id: int | None = getattr(notification, 'log_id', None)  # type: ignore
-    if log_id is None:
-        raise HTTPException(status_code=400, detail="Notification does not have associated log")
+    if not notification.log_id:  # type: ignore
+        notification.is_read = True  # type: ignore
+        db.commit()
+        raise HTTPException(status_code=400, detail="This notification does not have an associated log entry. It has been marked as read.")
     
-    # Get the cafeteria log
     cafeteria_log = db.query(models.CafeteriaLog).filter(
-        models.CafeteriaLog.LogID == log_id
+        models.CafeteriaLog.LogID == notification.log_id  # type: ignore
     ).first()
     
-    if cafeteria_log is None:
+    if not cafeteria_log:
         raise HTTPException(status_code=404, detail="Cafeteria log not found")
     
-    # Update meal status based on action
-    # Using setattr to avoid type checker issues with SQLAlchemy Column assignments
     if action == "allow":
-        setattr(cafeteria_log, 'MealStatus', "Allowed")  # type: ignore
-        setattr(cafeteria_log, 'Notes', "Allowed by cafeteria security despite duplicate entry")  # type: ignore
+        cafeteria_log.MealStatus = "Allowed"  # type: ignore
+        cafeteria_log.Notes = "Allowed by cafeteria security despite duplicate entry"  # type: ignore
     elif action == "deny":
-        setattr(cafeteria_log, 'MealStatus', "Denied")  # type: ignore
-        setattr(cafeteria_log, 'Notes', "Denied by cafeteria security due to duplicate entry")  # type: ignore
-    elif action == "flag":
-        setattr(cafeteria_log, 'MealStatus', "Allowed with warning")  # type: ignore
-        setattr(cafeteria_log, 'Notes', "Flagged by cafeteria security - duplicate entry allowed with warning")  # type: ignore
+        cafeteria_log.MealStatus = "Denied"  # type: ignore
+        cafeteria_log.Notes = "Denied by cafeteria security due to duplicate entry"  # type: ignore
+    else:
+        cafeteria_log.MealStatus = "Allowed with warning"  # type: ignore
+        cafeteria_log.Notes = "Flagged by cafeteria security - duplicate entry allowed with warning"  # type: ignore
     
-    # Mark notification as read
-    setattr(notification, 'is_read', True)  # type: ignore
-    
+    notification.is_read = True  # type: ignore
     db.commit()
-    
-    # Access attributes for return value
-    meal_status: str = getattr(cafeteria_log, 'MealStatus', '')  # type: ignore
-    log_id_value: int = getattr(cafeteria_log, 'LogID', 0)  # type: ignore
+    db.refresh(cafeteria_log)
     
     return {
         "message": f"Action '{action}' processed successfully",
-        "log_id": log_id_value,
-        "meal_status": meal_status
+        "log_id": cafeteria_log.LogID,  # type: ignore
+        "meal_status": cafeteria_log.MealStatus  # type: ignore
     }
 

@@ -161,5 +161,48 @@ CREATE TABLE IF NOT EXISTS RegistrarOfficer (
     INDEX idx_registrar_username (Username)
 ) ENGINE=InnoDB;
 
+CREATE TABLE IF NOT EXISTS Notifications (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    message VARCHAR(500) NOT NULL,
+    type VARCHAR(50) DEFAULT 'system',
+    target_role VARCHAR(50) NOT NULL,
+    is_read BOOLEAN DEFAULT FALSE,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    student_id INT NULL,
+    log_id INT NULL,
+    CONSTRAINT fk_notifications_students
+        FOREIGN KEY (student_id)
+        REFERENCES Students(id)
+        ON UPDATE CASCADE
+        ON DELETE SET NULL,
+    CONSTRAINT fk_notifications_cafeteria_logs
+        FOREIGN KEY (log_id)
+        REFERENCES CafeteriaLogs(LogID)
+        ON UPDATE CASCADE
+        ON DELETE SET NULL
+) ENGINE=InnoDB;
+
+ALTER TABLE CafeteriaLogs ADD COLUMN IF NOT EXISTS MealPeriod VARCHAR(50) NULL;
+
+CREATE TABLE IF NOT EXISTS PasswordResetOTP (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    email VARCHAR(255) NOT NULL,
+    otp_code VARCHAR(6) NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    expires_at DATETIME NOT NULL,
+    is_used BOOLEAN DEFAULT FALSE,
+    INDEX idx_email (email),
+    INDEX idx_otp_code (otp_code)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS RejectedStudents (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    email VARCHAR(255) NOT NULL,
+    student_id VARCHAR(50) NOT NULL,
+    rejected_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_email (email)
+) ENGINE=InnoDB;
+
 INSERT IGNORE INTO RegistrarOfficer (Username, PasswordHash, FullName, IsActive) 
 VALUES ('registrar@aastu.edu.et', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj/SJx/6VO7u', 'Registrar Officer', TRUE);

@@ -143,3 +143,11 @@ class Notification(Base):
     created_at = Column(DateTime, server_default=func.now())
     student_id = Column(Integer, ForeignKey("Students.id"), nullable=True)
     log_id = Column(Integer, ForeignKey("CafeteriaLogs.LogID"), nullable=True)
+
+class MealSchedule(Base):
+    __tablename__ = "MealSchedules"
+    ScheduleID = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    MealName = Column(String(50), nullable=False)
+    StartTime = Column(String(10), nullable=False)
+    EndTime = Column(String(10), nullable=False)
+    IsActive = Column(Boolean, default=True)

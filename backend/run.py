@@ -13,5 +13,5 @@ if __name__ == "__main__":
         port=8000, 
         reload=True, 
         reload_dirs=["D:\\MY WORKS\\Student Recognition System\\backend"],
-        log_level="info"
+        log_level="debug"
     )

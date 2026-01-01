@@ -92,6 +92,8 @@ def read_cafeteria_logs(
     db: Session = Depends(get_db)
 ):
     """Get logs from Cafeteria live verification attempts (recognized and not recognized)"""
+    from ..utils.meal_period import get_meal_period
+    
     logs = db.query(
         models.CafeteriaLog,
         models.Student.FirstName,
@@ -110,6 +112,10 @@ def read_cafeteria_logs(
     result = []
     for log, first_name, last_name, student_identifier, photo_path, camera_location in logs:
         access_time = log.AccessTime if getattr(log, 'AccessTime', None) else datetime.utcnow()
+        meal_period = getattr(log, 'MealPeriod', None) or get_meal_period(access_time)
+        meal_status = log.MealStatus
+        notes = log.Notes
+        
         log_dict = {
             "LogID": log.LogID,
             "StudentID": student_identifier,
@@ -117,9 +123,9 @@ def read_cafeteria_logs(
             "AccessTime": access_time,
             "MatchScore": log.MatchScore,
             "Decision": log.Decision,
-            "MealStatus": log.MealStatus,
-            "MealPeriod": getattr(log, 'MealPeriod', None),
-            "Notes": log.Notes,
+            "MealStatus": meal_status,
+            "MealPeriod": meal_period,
+            "Notes": notes,
             "FirstName": first_name,
             "LastName": last_name,
             "PhotoPath": photo_path if first_name and last_name else None,
