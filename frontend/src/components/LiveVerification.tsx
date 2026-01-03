@@ -152,7 +152,8 @@ export default function LiveVerification({ cameraId = 1, isActive = true, ipCame
     }
 
     try {
-      // Test connection first
+      stopWebcam();
+      
       const img = new Image();
       
       const connected = await new Promise<boolean>((resolve) => {
@@ -164,9 +165,6 @@ export default function LiveVerification({ cameraId = 1, isActive = true, ipCame
 
       console.log('IP camera connection test result:', connected);
       if (connected) {
-        if (videoRef.current instanceof HTMLVideoElement) {
-          videoRef.current.srcObject = null;
-        }
         setCameraMode('ip');
         setIpCameraActive(true);
         setIpCameraConnected(true);
@@ -182,7 +180,7 @@ export default function LiveVerification({ cameraId = 1, isActive = true, ipCame
       setIpCameraActive(false);
       setIpCameraConnected(false);
     }
-  }, [ipCameraUrl, ipCameraActive]);
+  }, [ipCameraUrl, stopWebcam]);
 
   const startCamera = useCallback(async () => {
     if (cameraMode === 'ip') {
@@ -221,7 +219,7 @@ export default function LiveVerification({ cameraId = 1, isActive = true, ipCame
       setDetectionMessage(`Detected ${count} face${count > 1 ? 's' : ''}.`);
       if (!isImageUpload) setDetectedFaces(faces);
 
-      const data = await apiService.verifyFace(imageData, cameraId);
+      const data = await apiService.verifyFace(imageData, cameraId, cameraMode === 'ip' ? 'IP Camera' : 'Webcam');
       const confidence = (data as any).confidence || 0;
       const isConfident = confidence >= 0.55;
       
@@ -235,6 +233,15 @@ export default function LiveVerification({ cameraId = 1, isActive = true, ipCame
         // Stop alert when student is recognized
         soundAlerts.stopUnknownStudentAlert();
         setUnknownAlertActive(false);
+      }
+      
+      // IP Camera specific alerts and notifications
+      if (cameraMode === 'ip') {
+        if (isConfident && data.success) {
+          soundAlerts.playIPCameraSuccess();
+        } else {
+          soundAlerts.playIPCameraFail();
+        }
       }
       
       setResult({
@@ -281,7 +288,7 @@ export default function LiveVerification({ cameraId = 1, isActive = true, ipCame
   };
 
   const captureFrame = useCallback(() => {
-    console.log('captureFrame called - cameraActive:', cameraActive, 'ipCameraActive:', ipCameraActive, 'verifying:', verifying);
+    console.log('captureFrame called - cameraActive:', cameraActive, 'ipCameraActive:', ipCameraActive, 'verifying:', verifying, 'cameraMode:', cameraMode);
     if ((!cameraActive && !ipCameraActive) || verifying) return;
     
     setIsImageUpload(false);
@@ -299,16 +306,17 @@ export default function LiveVerification({ cameraId = 1, isActive = true, ipCame
       canvas.height = mediaElement.videoHeight;
       ctx.drawImage(mediaElement, 0, 0);
       const imageData = canvas.toDataURL('image/jpeg', 0.95);
+      console.log('Calling handleVerify with cameraMode:', cameraMode);
       handleVerify(imageData);
     } else if (cameraMode === 'ip') {
-      console.log('Fetching IP camera image as blob');
+      console.log('Fetching IP camera image as blob, cameraMode:', cameraMode);
       fetch(ipCameraUrl + '?t=' + Date.now())
         .then(res => res.blob())
         .then(blob => {
           const reader = new FileReader();
           reader.onloadend = () => {
             const imageData = reader.result as string;
-            console.log('Calling handleVerify with fetched imageData');
+            console.log('Calling handleVerify with fetched imageData, cameraMode:', cameraMode);
             handleVerify(imageData);
           };
           reader.readAsDataURL(blob);
@@ -318,7 +326,7 @@ export default function LiveVerification({ cameraId = 1, isActive = true, ipCame
     } else {
       console.log('Capture conditions not met - cameraMode:', cameraMode, 'isImage:', mediaElement instanceof HTMLImageElement);
     }
-  }, [cameraActive, ipCameraActive, verifying, handleVerify, cameraMode]);
+  }, [cameraActive, ipCameraActive, verifying, handleVerify, cameraMode, ipCameraUrl]);
 
   useEffect(() => {
     if (ipCameraOnly) {
@@ -389,25 +397,6 @@ export default function LiveVerification({ cameraId = 1, isActive = true, ipCame
       const updateImage = () => {
         if (videoRef.current instanceof HTMLImageElement) {
           videoRef.current.src = ipCameraUrl + '?t=' + Date.now();
-        }
-      };
-      
-      const refreshInterval = setInterval(updateImage, 200);
-      
-      return () => {
-        clearInterval(refreshInterval);
-      };
-    }
-  }, [ipCameraActive, ipCameraUrl]);
-
-  useEffect(() => {
-    if (ipCameraActive && ipCameraUrl) {
-      console.log('Setting up image refresh for:', ipCameraUrl);
-      const updateImage = () => {
-        if (videoRef.current instanceof HTMLImageElement) {
-          videoRef.current.src = ipCameraUrl + '?t=' + Date.now();
-        } else {
-          console.log('videoRef is not an image element:', videoRef.current);
         }
       };
       

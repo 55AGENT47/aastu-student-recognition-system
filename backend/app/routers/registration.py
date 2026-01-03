@@ -11,6 +11,7 @@ from pydantic import BaseModel, EmailStr, Field
 from typing import Optional
 from datetime import datetime
 from ..services.face_recognition_service import face_service
+from urllib.parse import unquote
 
 router = APIRouter(prefix="/api", tags=["registration"])
 logger = logging.getLogger(__name__)
@@ -121,7 +122,7 @@ async def register_student(
         PhotoPath=photo,
         CafeAccess=cafeAccess,
         PasswordHash=hashed_password,
-        IsActive=False
+        IsActive=False  # Students start as inactive and need approval
     )
     
     db.add(db_student)
@@ -242,6 +243,7 @@ def get_departments():
 def get_pending_students(db: Session = Depends(get_db)):
     pending = db.query(models.Student).filter(models.Student.IsActive == False).all()
     return [{
+        "id": s.id,  # Add database id for approval/rejection
         "StudentID": s.StudentID,
         "FirstName": s.FirstName,
         "LastName": s.LastName,
@@ -254,19 +256,20 @@ def get_pending_students(db: Session = Depends(get_db)):
     } for s in pending]
 
 @router.post("/registration/approve/{student_id}")
-def approve_student(student_id: str, db: Session = Depends(get_db)):
-    student = db.query(models.Student).filter(models.Student.StudentID == student_id).first()
+def approve_student(student_id: int, db: Session = Depends(get_db)):
+    student = db.query(models.Student).filter(models.Student.id == student_id).first()
     if not student:
-        raise HTTPException(status_code=404, detail="Student not found")
+        raise HTTPException(status_code=404, detail=f"Student with ID {student_id} not found")
+    
     setattr(student, 'IsActive', True)
     db.commit()
     return {"message": "Student approved successfully"}
 
 @router.post("/registration/reject/{student_id}")
-def reject_student(student_id: str, db: Session = Depends(get_db)):
-    student = db.query(models.Student).filter(models.Student.StudentID == student_id).first()
+def reject_student(student_id: int, db: Session = Depends(get_db)):
+    student = db.query(models.Student).filter(models.Student.id == student_id).first()
     if not student:
-        raise HTTPException(status_code=404, detail="Student not found")
+        raise HTTPException(status_code=404, detail=f"Student with ID {student_id} not found")
     
     # Track rejected student before deletion
     rejected_record = models.RejectedStudent(
@@ -278,3 +281,16 @@ def reject_student(student_id: str, db: Session = Depends(get_db)):
     db.delete(student)
     db.commit()
     return {"message": "Student rejected successfully"}
+
+@router.get("/registration/debug-students")
+def debug_students(db: Session = Depends(get_db)):
+    """Debug endpoint to see all students and their status"""
+    all_students = db.query(models.Student).all()
+    return [{
+        "id": s.id,
+        "StudentID": s.StudentID,
+        "FirstName": s.FirstName,
+        "LastName": s.LastName,
+        "Email": s.Email,
+        "IsActive": s.IsActive
+    } for s in all_students]

@@ -23,30 +23,35 @@ export default function PendingStudents() {
     }
   };
 
-  const handleApproval = async (studentId: string, approved: boolean) => {
+  const handleApproval = async (studentId: number, approved: boolean) => {
     try {
-      const endpoint = approved 
-        ? `/api/registration/approve/${studentId}` 
-        : `/api/registration/reject/${studentId}`;
+      if (approved) {
+        await apiService.approveStudent(studentId);
+      } else {
+        await apiService.rejectStudent(studentId);
+      }
       
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json'
-        }
-      });
+      // Remove from local state immediately
+      setPendingStudents(prev => prev.filter(s => (s as any).id !== studentId));
       
-      if (!response.ok) throw new Error('Failed to update student status');
-      
-      setPendingStudents(prev => prev.filter(s => s.StudentID !== studentId));
+      // Show success message
       alert(`Student ${approved ? 'approved' : 'rejected'} successfully`);
       
       // Trigger overview refresh
       window.dispatchEvent(new Event('studentApprovalChanged'));
-    } catch (error) {
+      
+    } catch (error: any) {
       console.error('Failed to update student status:', error);
-      alert('Failed to update student status');
+      
+      // Handle specific error cases
+      if (error.message?.includes('not found')) {
+        // Student not found - remove from list
+        setPendingStudents(prev => prev.filter(s => (s as any).id !== studentId));
+        alert(`Student not found. They may have already been processed.`);
+      } else {
+        // Other errors - show error message
+        alert(error.message || 'Failed to update student status');
+      }
     }
   };
 
@@ -145,14 +150,14 @@ export default function PendingStudents() {
                   {/* Action Buttons */}
                   <div className="flex flex-col space-y-2 lg:w-32">
                     <button
-                      onClick={() => handleApproval(student.StudentID, true)}
+                      onClick={() => handleApproval((student as any).id, true)}
                       className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 transition-colors"
                     >
                       <Check className="h-4 w-4 mr-1" />
                       Approve
                     </button>
                     <button
-                      onClick={() => handleApproval(student.StudentID, false)}
+                      onClick={() => handleApproval((student as any).id, false)}
                       className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 transition-colors"
                     >
                       <X className="h-4 w-4 mr-1" />

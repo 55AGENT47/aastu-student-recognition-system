@@ -28,6 +28,7 @@ export default function CafeteriaLogs() {
   const [mealPeriodFilter, setMealPeriodFilter] = useState<string>('all');
   const [mealStatusFilter, setMealStatusFilter] = useState<string>('all');
   const [duplicateFilter, setDuplicateFilter] = useState<string>('all');
+  const [cameraTypeFilter, setCameraTypeFilter] = useState<string>('all');
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [showClearLogsModal, setShowClearLogsModal] = useState(false);
   const [clearDaysOld, setClearDaysOld] = useState<number | ''>('');
@@ -197,6 +198,7 @@ export default function CafeteriaLogs() {
     if (mealStatusFilter !== 'all' && log.MealStatus !== mealStatusFilter) return false;
     if (duplicateFilter === 'yes' && !(log as any).IsDuplicateAttempt) return false;
     if (duplicateFilter === 'no' && (log as any).IsDuplicateAttempt) return false;
+    if (cameraTypeFilter !== 'all' && (log as any).CameraType !== cameraTypeFilter) return false;
     return true;
   });
 
@@ -363,6 +365,12 @@ export default function CafeteriaLogs() {
                     scope="col"
                     className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                   >
+                    Camera Type
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  >
                     Meal Status
                   </th>
                   <th
@@ -439,11 +447,12 @@ export default function CafeteriaLogs() {
                           log.MealPeriod === 'Dinner' ? 'bg-purple-100 text-purple-800' :
                           'bg-gray-100 text-gray-800'
                         }`}>
-                          {log.MealPeriod && (log.MealStatus === 'Allowed' || log.MealStatus === 'Allowed with warning')
-                            ? `${log.MealPeriod} - ${new Date(log.AccessTime).toLocaleTimeString()}` 
-                            : (log.MealPeriod || 'N/A')}
+                          {log.MealPeriod || 'N/A'}
                         </span>
                       )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {(log as any).CameraType || 'Webcam'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       {log.MealStatus === 'NON CAFE STUDENT' ? (
@@ -671,6 +680,18 @@ export default function CafeteriaLogs() {
                         <option value="no">No</option>
                       </select>
                     </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Camera Type</label>
+                      <select
+                        value={cameraTypeFilter}
+                        onChange={(e) => setCameraTypeFilter(e.target.value)}
+                        className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+                      >
+                        <option value="all">All Camera Types</option>
+                        <option value="Webcam">Webcam</option>
+                        <option value="IP Camera">IP Camera</option>
+                      </select>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -691,6 +712,7 @@ export default function CafeteriaLogs() {
                     setMealPeriodFilter('all');
                     setMealStatusFilter('all');
                     setDuplicateFilter('all');
+                    setCameraTypeFilter('all');
                   }}
                   className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:w-auto sm:text-sm"
                 >

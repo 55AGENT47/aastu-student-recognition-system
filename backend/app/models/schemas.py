@@ -77,6 +77,7 @@ class EventLogCreate(EventLogBase):
 class EventLog(EventLogBase):
     LogID: int
     EventTime: datetime
+    CameraType: Optional[str] = None
     FirstName: Optional[str] = None
     LastName: Optional[str] = None
     PhotoPath: Optional[str] = None
@@ -101,6 +102,7 @@ class CafeteriaLogCreate(CafeteriaLogBase):
 class CafeteriaLog(CafeteriaLogBase):
     LogID: int
     AccessTime: datetime
+    CameraType: Optional[str] = None
     FirstName: Optional[str] = None
     LastName: Optional[str] = None
     PhotoPath: Optional[str] = None
@@ -162,6 +164,21 @@ class KnownFaceResponse(BaseModel):
     name: str
     student_id: Optional[int] = None
     created_at: datetime
+    
+    model_config = {
+        "from_attributes": True
+    }
+
+class EventLogResponse(BaseModel):
+    LogID: int
+    StudentID: Optional[int]
+    CameraID: int
+    MatchScore: Optional[float]
+    Decision: Optional[bool]
+    EventTime: datetime
+    CameraType: Optional[str]
+    VerificationStatus: Optional[str]
+    Notes: Optional[str]
     
     model_config = {
         "from_attributes": True

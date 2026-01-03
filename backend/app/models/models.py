@@ -29,7 +29,7 @@ class KnownFace(Base):
     name = Column(String(255), nullable=False, index=True)
     image = Column(LargeBinary, nullable=False)
     encoding = Column(LargeBinary, nullable=False)
-    student_id = Column(Integer, ForeignKey("Students.StudentID"), nullable=True, index=True)
+    student_id = Column(Integer, ForeignKey("Students.id"), nullable=True, index=True)
     created_at = Column(DateTime, server_default=func.now())
     student = relationship("Student", back_populates="known_faces")
 
@@ -99,6 +99,9 @@ class EventLog(Base):
     MatchScore = Column(Float)
     Decision = Column(Boolean)
     EventTime = Column(DateTime, server_default=func.now())
+    CameraType = Column(String(50), default="Webcam")
+    VerificationStatus = Column(String(50), default="Success")
+    Notes = Column(String(255))
     student = relationship("Student", back_populates="event_logs", foreign_keys=[StudentID])
     camera = relationship("Camera", back_populates="event_logs")
 
@@ -112,6 +115,7 @@ class CafeteriaLog(Base):
     Decision = Column(Boolean, nullable=False)
     MealStatus = Column(String(50), default='meal not eaten')
     MealPeriod = Column(String(50), nullable=True)
+    CameraType = Column(String(50), default="Webcam")
     Notes = Column(String(255))
     student = relationship("Student", back_populates="cafeteria_logs", foreign_keys=[StudentID])
     camera = relationship("Camera", back_populates="cafeteria_logs")

@@ -8,6 +8,7 @@ from ..models import models, schemas
 from ..utils.auth import get_current_user, get_current_user_optional
 from ..services.face_recognition_service import face_service
 from ..services.notification_service import notification_service
+from ..services.ip_camera_log_service import ip_camera_log_service
 from ..utils.meal_period import get_meal_period
 from datetime import datetime, timedelta
 
@@ -17,6 +18,7 @@ router = APIRouter(prefix="/api/face", tags=["face_recognition"])
 class FaceRequest(BaseModel):
     image_data: str
     camera_id: int = 1
+    camera_type: str = "Webcam"
 
 class ValidateRequest(BaseModel):
     image_data: str
@@ -56,6 +58,7 @@ async def verify_face(
 ):
     """Verify face against known faces"""
     try:
+        print(f"Received camera_type: {request.camera_type}, camera_id: {request.camera_id}")
         result = face_service.verify_face(db, request.image_data)
         result["timestamp"] = datetime.now().isoformat()
         camera = db.query(models.Camera).filter(models.Camera.CameraID == request.camera_id).first()
@@ -112,6 +115,7 @@ async def verify_face(
                     AccessTime=access_time,
                     MealPeriod=meal_period,
                     MealStatus="Pending" if is_duplicate else "Allowed",
+                    CameraType=request.camera_type,
                     Notes="Verification successful" + (" - Duplicate entry detected" if is_duplicate else "")
                 )
                 db.add(cafeteria_log)
@@ -140,6 +144,7 @@ async def verify_face(
                     AccessTime=access_time,
                     MealPeriod=meal_period,
                     MealStatus="NON CAFE STUDENT",
+                    CameraType=request.camera_type,
                     Notes="Student does not have cafeteria access"
                 )
                 db.add(cafeteria_log)
@@ -147,13 +152,31 @@ async def verify_face(
                 result["access_granted"] = False
         else:
             # Main gate portal - log to EventLogs
-            if student_record:
+            if student_record and success and confidence >= 0.55:
+                # Successful verification
                 event_log = models.EventLog(
-                    StudentID=student_record.id,
+                    StudentID=getattr(student_record, 'id'),
                     CameraID=request.camera_id,
                     MatchScore=confidence,
-                    Decision=decision_status,
-                    EventTime=datetime.now()
+                    Decision=True,
+                    EventTime=datetime.now(),
+                    CameraType=request.camera_type,
+                    VerificationStatus="Success",
+                    Notes=f"Student: {student_record.FirstName} {student_record.LastName}, Confidence: {confidence:.2f}"
+                )
+                db.add(event_log)
+            else:
+                # Failed verification
+                reason = "Face not detected" if not success else "Low confidence" if confidence < 0.55 else "Unknown person"
+                event_log = models.EventLog(
+                    StudentID=getattr(student_record, 'id') if student_record else None,
+                    CameraID=request.camera_id,
+                    MatchScore=confidence,
+                    Decision=False,
+                    EventTime=datetime.now(),
+                    CameraType=request.camera_type,
+                    VerificationStatus="Failed",
+                    Notes=f"Reason: {reason}, Confidence: {confidence:.2f}"
                 )
                 db.add(event_log)
         

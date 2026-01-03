@@ -9,8 +9,20 @@ def get_meal_period(access_time: datetime, schedules: Optional[list] = None) -> 
         for schedule in schedules:
             if not schedule.get('IsActive'):
                 continue
-            start = datetime.strptime(schedule['StartTime'], '%H:%M:%S').time()
-            end = datetime.strptime(schedule['EndTime'], '%H:%M:%S').time()
+            start_str = schedule['StartTime']
+            end_str = schedule['EndTime']
+            
+            # Handle both HH:MM:SS and HH:MM formats
+            try:
+                start = datetime.strptime(start_str, '%H:%M:%S').time()
+            except ValueError:
+                start = datetime.strptime(start_str, '%H:%M').time()
+            
+            try:
+                end = datetime.strptime(end_str, '%H:%M:%S').time()
+            except ValueError:
+                end = datetime.strptime(end_str, '%H:%M').time()
+            
             if start <= current_time <= end:
                 return schedule['MealName']
     
@@ -23,5 +35,5 @@ def get_meal_period(access_time: datetime, schedules: Optional[list] = None) -> 
     elif 17 <= hour < 21:
         return 'Dinner'
     else:
-        return 'Unknown'
+        return 'Outside Meal Hours'
 

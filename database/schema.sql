@@ -100,6 +100,9 @@ CREATE TABLE IF NOT EXISTS EventLogs (
     MatchScore FLOAT,
     Decision BOOLEAN,
     EventTime DATETIME DEFAULT CURRENT_TIMESTAMP,
+    CameraType VARCHAR(50) DEFAULT 'Webcam',
+    VerificationStatus VARCHAR(50) DEFAULT 'Success',
+    Notes VARCHAR(255),
     CONSTRAINT fk_EventLogs_Students
         FOREIGN KEY (StudentID)
         REFERENCES Students(id)
@@ -120,6 +123,8 @@ CREATE TABLE IF NOT EXISTS CafeteriaLogs (
     MatchScore FLOAT,
     Decision BOOLEAN NOT NULL,
     MealStatus VARCHAR(50) DEFAULT 'meal not eaten',
+    MealPeriod VARCHAR(50) NULL,
+    CameraType VARCHAR(50) DEFAULT 'Webcam',
     Notes VARCHAR(255),
     CONSTRAINT fk_CafeteriaLogs_Students
         FOREIGN KEY (StudentID)
@@ -184,6 +189,11 @@ CREATE TABLE IF NOT EXISTS Notifications (
 ) ENGINE=InnoDB;
 
 ALTER TABLE CafeteriaLogs ADD COLUMN IF NOT EXISTS MealPeriod VARCHAR(50) NULL;
+ALTER TABLE CafeteriaLogs ADD COLUMN IF NOT EXISTS CameraType VARCHAR(50) DEFAULT 'Webcam';
+
+ALTER TABLE EventLogs ADD COLUMN IF NOT EXISTS CameraType VARCHAR(50) DEFAULT 'Webcam';
+ALTER TABLE EventLogs ADD COLUMN IF NOT EXISTS VerificationStatus VARCHAR(50) DEFAULT 'Success';
+ALTER TABLE EventLogs ADD COLUMN IF NOT EXISTS Notes VARCHAR(255);
 
 CREATE TABLE IF NOT EXISTS PasswordResetOTP (
     id INT AUTO_INCREMENT PRIMARY KEY,

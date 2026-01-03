@@ -1,4 +1,4 @@
-// Sound alert utility for security notifications
+
 
 class SoundAlerts {
   private audioContext: AudioContext | null = null;
@@ -10,6 +10,44 @@ class SoundAlerts {
       this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
     }
     return this.audioContext;
+  }
+
+  // Play success sound for IP camera verification
+  playIPCameraSuccess() {
+    const ctx = this.getAudioContext();
+    const oscillator = ctx.createOscillator();
+    const gainNode = ctx.createGain();
+
+    oscillator.connect(gainNode);
+    gainNode.connect(ctx.destination);
+
+    oscillator.frequency.value = 1000;
+    oscillator.type = 'sine';
+
+    gainNode.gain.setValueAtTime(0.3, ctx.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+
+    oscillator.start(ctx.currentTime);
+    oscillator.stop(ctx.currentTime + 0.5);
+  }
+
+  // Play failure sound for IP camera verification
+  playIPCameraFail() {
+    const ctx = this.getAudioContext();
+    const oscillator = ctx.createOscillator();
+    const gainNode = ctx.createGain();
+
+    oscillator.connect(gainNode);
+    gainNode.connect(ctx.destination);
+
+    oscillator.frequency.value = 400;
+    oscillator.type = 'sawtooth';
+
+    gainNode.gain.setValueAtTime(0.4, ctx.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1.0);
+
+    oscillator.start(ctx.currentTime);
+    oscillator.stop(ctx.currentTime + 1.0);
   }
 
   // Play continuous alert sound for duplicate entry until stopped

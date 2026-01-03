@@ -313,11 +313,11 @@ export const apiService = {
     return handleJsonResponse<any>(response, 'Failed to detect faces');
   },
 
-  async verifyFace(imageData: string, cameraId: number = 1): Promise<VerificationResult> {
+  async verifyFace(imageData: string, cameraId: number = 1, cameraType: string = "Webcam"): Promise<VerificationResult> {
     const response = await fetch(`${API_BASE}/api/face/verify`, {
       method: 'POST',
       headers: getAuthHeaders(),
-      body: JSON.stringify({ image_data: imageData, camera_id: cameraId }),
+      body: JSON.stringify({ image_data: imageData, camera_id: cameraId, camera_type: cameraType }),
     });
     return handleJsonResponse<VerificationResult>(response, 'Failed to verify face');
   },
@@ -391,5 +391,21 @@ export const apiService = {
     });
     if (!response.ok) throw new Error(await response.text());
     return response.json();
+  },
+
+  async approveStudent(studentId: number): Promise<{ message: string }> {
+    const response = await fetch(`${API_BASE}/api/registration/approve/${studentId}`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+    });
+    return handleJsonResponse<{ message: string }>(response, 'Failed to approve student');
+  },
+
+  async rejectStudent(studentId: number): Promise<{ message: string }> {
+    const response = await fetch(`${API_BASE}/api/registration/reject/${studentId}`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+    });
+    return handleJsonResponse<{ message: string }>(response, 'Failed to reject student');
   }
 };
