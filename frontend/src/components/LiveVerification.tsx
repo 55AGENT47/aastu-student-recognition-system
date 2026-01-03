@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Camera, Upload, CheckCircle, XCircle, User, Square, Smartphone } from 'lucide-react';
+import { Camera, CheckCircle, XCircle, User, Square, Smartphone } from 'lucide-react';
 import { apiService } from '../services/api';
 import { Student } from '../types';
 import IPCameraConfig from './IPCameraConfig';
@@ -40,7 +40,6 @@ export default function LiveVerification({ cameraId = 1, isActive = true, ipCame
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [detectionMessage, setDetectionMessage] = useState<string | null>(null);
   const [detectedFaces, setDetectedFaces] = useState<DetectedFace[]>([]);
-  const [isImageUpload, setIsImageUpload] = useState(false);
 
   const [cameraMode, setCameraMode] = useState<'webcam' | 'ip'>('webcam');
   const [ipCameraUrl, setIpCameraUrl] = useState<string>('');
@@ -50,7 +49,7 @@ export default function LiveVerification({ cameraId = 1, isActive = true, ipCame
   const [ipCameraConnected, setIpCameraConnected] = useState(false);
   const [unknownAlertActive, setUnknownAlertActive] = useState(false);
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const videoRef = useRef<HTMLVideoElement | HTMLImageElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const autoCaptureIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -204,7 +203,7 @@ export default function LiveVerification({ cameraId = 1, isActive = true, ipCame
       
       if (!count) {
         setDetectionMessage('No face detected. Adjust lighting or move closer to the camera.');
-        if (!isImageUpload) setDetectedFaces([]);
+        setDetectedFaces([]);
         setResult({
           success: false,
           error: 'Unable to detect a face. Please ensure your face is clearly visible.',
@@ -217,7 +216,7 @@ export default function LiveVerification({ cameraId = 1, isActive = true, ipCame
       }
       
       setDetectionMessage(`Detected ${count} face${count > 1 ? 's' : ''}.`);
-      if (!isImageUpload) setDetectedFaces(faces);
+      setDetectedFaces(faces);
 
       const data = await apiService.verifyFace(imageData, cameraId, cameraMode === 'ip' ? 'IP Camera' : 'Webcam');
       const confidence = (data as any).confidence || 0;
@@ -268,30 +267,13 @@ export default function LiveVerification({ cameraId = 1, isActive = true, ipCame
     } finally {
       setVerifying(false);
     }
-  }, [cameraId, isImageUpload, unknownAlertActive]);
+  }, [cameraId, unknownAlertActive]);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      // Stop camera when uploading image
-      stopCamera();
-      setIsImageUpload(true);
-      setDetectedFaces([]); // Clear any existing face overlays
-      
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const imageData = event.target?.result as string;
-        handleVerify(imageData);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
+
 
   const captureFrame = useCallback(() => {
     console.log('captureFrame called - cameraActive:', cameraActive, 'ipCameraActive:', ipCameraActive, 'verifying:', verifying, 'cameraMode:', cameraMode);
     if ((!cameraActive && !ipCameraActive) || verifying) return;
-    
-    setIsImageUpload(false);
 
     const mediaElement = videoRef.current;
     const canvas = canvasRef.current;
@@ -508,7 +490,7 @@ export default function LiveVerification({ cameraId = 1, isActive = true, ipCame
   };
 
   const renderFaceOverlays = () => {
-    if (!detectedFaces.length || !videoRef.current || isImageUpload) return null;
+    if (!detectedFaces.length || !videoRef.current) return null;
     const dimensions = getMediaDimensions();
     if (!dimensions) return null;
 
@@ -552,10 +534,10 @@ export default function LiveVerification({ cameraId = 1, isActive = true, ipCame
     <div className="space-y-6">
       <div>
         <h2 className="text-3xl font-bold text-gray-900">{ipCameraOnly ? 'IP Camera Verification' : 'Live Verification'}</h2>
-        <p className="mt-2 text-gray-600">{ipCameraOnly ? 'Verify student identity using IP camera' : 'Verify student identity using camera or uploaded images'}</p>
+        <p className="mt-2 text-gray-600">Verify student identity using camera</p>
       </div>
 
-      <div className={`grid grid-cols-1 gap-6 items-stretch ${ipCameraOnly ? 'lg:grid-cols-[1fr_1.5fr]' : 'lg:grid-cols-[1fr_1fr_1.5fr]'}`}>
+      <div className={`grid grid-cols-1 gap-6 items-stretch lg:grid-cols-[1fr_1.5fr]`}>
 
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-8 h-full flex flex-col">
           <div className="mb-4">
@@ -785,45 +767,7 @@ export default function LiveVerification({ cameraId = 1, isActive = true, ipCame
         </div>
 
 
-        {!ipCameraOnly && (
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-8 h-full flex flex-col">
-            <h3 className="text-lg font-semibold !text-black mb-6">Upload Image</h3>
 
-            <div className="space-y-4">
-              <div
-                onClick={() => fileInputRef.current?.click()}
-                className="border-2 border-dashed border-gray-300 rounded-xl p-12 text-center hover:border-blue-500 transition-colors cursor-pointer"
-              >
-                <Upload className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-sm font-medium text-gray-900">
-                  Click to upload or drag and drop
-                </p>
-                <p className="text-xs text-gray-500 mt-2">
-                  PNG, JPG up to 10MB
-                </p>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileChange}
-                  className="hidden"
-                />
-              </div>
-
-              {cameraId === 1 && unknownAlertActive && (
-                <div className="rounded-lg border-2 border-red-500 bg-red-50 px-4 py-3 text-sm text-red-800 font-semibold animate-pulse">
-                  ⚠️ Unknown Student Detected - Turn off camera to stop alert
-                </div>
-              )}
-
-              {verifying && (
-                <div className="flex items-center justify-center py-4">
-                  <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
 
 
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 h-full flex flex-col">
@@ -832,7 +776,7 @@ export default function LiveVerification({ cameraId = 1, isActive = true, ipCame
           {!result && !verifying && (
             <div className="flex flex-col items-center justify-center py-12 text-gray-400">
               <Camera className="h-16 w-16 mb-4" />
-              <p className="text-sm">{ipCameraOnly ? 'Connect to IP camera to start verification' : 'Use camera or upload an image to start verification'}</p>
+              <p className="text-sm">Connect to camera to start verification</p>
             </div>
           )}
 

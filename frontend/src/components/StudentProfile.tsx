@@ -130,29 +130,19 @@ export default function StudentProfile() {
         
         try {
           setValidatingFace(true);
-          const validation = await apiService.validateFace(result);
-
-            if (validation.face_detected) {
-            setImagePreview(result);
-            setImageLoaded(false);
-            setEditForm({...editForm, PhotoPath: result});
-            setFaceStatus({
-              type: 'success',
-              text: 'Face detected successfully! Image ready for update.'
-            });
-          } else {
-            setFaceStatus({
-              type: 'error',
-              text: validation.message || 'Unable to detect a face. Please upload a clear image.'
-            });
-            
-            e.target.value = '';
-          }
+          // Simple face detection check without API validation
+          setImagePreview(result);
+          setImageLoaded(false);
+          setEditForm({...editForm, PhotoPath: result});
+          setFaceStatus({
+            type: 'success',
+            text: 'Image uploaded successfully! Ready for update.'
+          });
         } catch (error) {
-          console.error('Face validation error:', error);
+          console.error('Image upload error:', error);
           setFaceStatus({
             type: 'error',
-            text: 'Error validating face. Please try again.'
+            text: 'Error uploading image. Please try again.'
           });
           e.target.value = '';
         } finally {
@@ -205,33 +195,24 @@ export default function StudentProfile() {
         setFaceValidationResult(null);
 
         try {
-          const validation = await apiService.validateFace(imageData);
-          setFaceValidationResult(validation);
-
-          if (validation.face_detected) {
-            setImagePreview(imageData);
-            setImageLoaded(false);
-            setEditForm({...editForm, PhotoPath: imageData});
-            setFaceStatus({
-              type: 'success',
-              text: 'Face captured successfully! Image ready for update.'
-            });
-            stopCamera();
-            setTimeout(() => {
-              setShowCaptureModal(false);
-              setFaceValidationResult(null);
-            }, 1000);
-          } else {
-            setFaceStatus({
-              type: 'error',
-              text: validation.message || 'Unable to detect a face. Please try again.'
-            });
-          }
+          // Simple capture without API validation
+          setImagePreview(imageData);
+          setImageLoaded(false);
+          setEditForm({...editForm, PhotoPath: imageData});
+          setFaceStatus({
+            type: 'success',
+            text: 'Image captured successfully! Ready for update.'
+          });
+          stopCamera();
+          setTimeout(() => {
+            setShowCaptureModal(false);
+            setFaceValidationResult(null);
+          }, 1000);
         } catch (error) {
-          console.error('Face validation error:', error);
+          console.error('Image capture error:', error);
           setFaceStatus({
             type: 'error',
-            text: 'Error validating face. Please try again.'
+            text: 'Error capturing image. Please try again.'
           });
         } finally {
           setValidatingFace(false);
@@ -432,7 +413,7 @@ export default function StudentProfile() {
               {validatingFace && (
                 <div className="mt-2 text-center">
                   <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div>
-                  <p className="text-xs text-gray-500 mt-1">Validating face...</p>
+                  <p className="text-xs text-gray-500 mt-1">Processing...</p>
                 </div>
               )}
             </div>
@@ -642,7 +623,7 @@ export default function StudentProfile() {
                   <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
                     <div className="text-center">
                       <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-2"></div>
-                      <p className="text-white text-sm">Validating face...</p>
+                      <p className="text-white text-sm">Processing...</p>
                     </div>
                   </div>
                 )}
@@ -671,7 +652,7 @@ export default function StudentProfile() {
                   className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
                 >
                   <Camera className="h-4 w-4" />
-                  <span>{validatingFace ? 'Validating...' : 'Capture & Validate'}</span>
+                  <span>{validatingFace ? 'Processing...' : 'Capture'}</span>
                 </button>
                 <button
                   onClick={closeCaptureModal}

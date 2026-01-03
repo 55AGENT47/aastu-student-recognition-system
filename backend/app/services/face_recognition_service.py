@@ -67,6 +67,7 @@ class FaceRecognitionService:
             print(f"Error detecting faces: {e}")
             return [], 0
     
+
     def validate_face(self, base64_image: str) -> Dict:
         try:
             image = self.base64_to_image(base64_image)
